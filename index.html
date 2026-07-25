@@ -246,6 +246,14 @@
     gap: 4px 4px;
     align-content: stretch;
   }
+  /* With very few dice, a single stretched row of 4 narrow-but-tall columns
+     forces each die's fixed-size 3D mesh past its own camera frustum and it
+     gets clipped left/right. Corner them into a 2x2 grid instead so cells
+     stay close to square and every die has room to render at full size. */
+  .pool-grid.grid-corners {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+  }
   .die-card {
     border: none;
     background: transparent;
@@ -1147,6 +1155,10 @@ function renderModeBanner() {
 function renderPool() {
   const grid = document.getElementById('poolGrid');
   document.getElementById('poolCount').textContent = state.pool.length + ' standing';
+  // Rule die + symbol dice together; at 4 or fewer, corner them into a 2x2
+  // grid instead of one stretched row (see .grid-corners for why).
+  const totalDiceShown = state.pool.length + (state.ruleDie ? 1 : 0);
+  grid.classList.toggle('grid-corners', totalDiceShown > 0 && totalDiceShown <= 4);
 
   let emptyMsg = document.getElementById('emptyPoolMsg');
   if (state.pool.length === 0) {
