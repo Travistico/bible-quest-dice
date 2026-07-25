@@ -813,16 +813,20 @@ function newAnim() {
 function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
 
 // The camera's tumble-safe framing, and how much closer the camera moves in
-// for (a) the 2x2 corner layout at <=4 dice, snapped on instantly once
-// settled, and (b) a die the player has selected, eased in/out smoothly.
-// Zooming in during the tumble itself would clip the cube against this same
-// tight frustum, so either zoom only ever applies after rotation has
-// settled flat (see tickAllDice) — the resting silhouette is far smaller
-// than the mid-tumble bounding sphere, leaving plenty of room to move in
-// safely. The two never multiply together (see Math.min below) since that
-// combined zoom would eat into the resting silhouette's own safe margin.
+// for (a) the 2x2 corner layout at <=4 dice, and (b) a die the player has
+// selected. Zooming in during the tumble itself would clip the cube against
+// this same tight frustum, so either zoom only ever applies after rotation
+// has settled flat (see tickAllDice) — the resting silhouette is far
+// smaller than the mid-tumble bounding sphere, leaving plenty of room to
+// move in safely. The tier zoom eases in quickly (a bare landing "settle",
+// not a deliberate animation) while the selection zoom eases more slowly —
+// and the two multiply together, so an already-large selected die zooms in
+// a bit further using the gentler SELECT_EXTRA_FACTOR instead of the full
+// ZOOM_FACTOR, keeping the combined zoom inside the frustum's safe margin.
 const BASE_CAM = { x: 0, y: 0.85, z: 3.55 };
-const ZOOM_FACTOR = 0.72; // ~1.39x bigger
+const ZOOM_FACTOR = 0.72; // ~1.39x bigger — tier zoom, and full selection zoom outside the tier
+const SELECT_EXTRA_FACTOR = 0.85; // ~1.18x extra selection zoom for a die that's already in the large tier
+const TIER_ZOOM_MS = 130;
 const SELECT_ZOOM_MS = 260;
 
 function createDieScene(container, faces, frontFace, getGlyph, purple, large) {
@@ -918,17 +922,32 @@ function tickAllDice(now) {
     inst.mesh.position.y = t < 1 ? Math.sin(Math.PI * t) * a.hop : 0;
 
     if (t < 1) {
-      // Still tumbling: hold the proven-safe wide framing and clear the
-      // selection-zoom bookkeeping so the next landing eases in clean.
+      // Still tumbling: hold the proven-safe wide framing and clear both
+      // zoom timers so the next landing eases in clean.
+      inst.tierZoomTarget = undefined;
       inst.selZoomTarget = undefined;
       inst.camera.position.set(BASE_CAM.x, BASE_CAM.y, BASE_CAM.z);
     } else {
-      // Flat and frozen — safe to zoom. The dice-count tier (large) snaps
-      // straight to size, no transition; selection eases in/out on top of
-      // it. The two are capped with Math.min rather than multiplied so a
-      // selected die in the large tier can't zoom past the safe margin.
-      const tierFactor = inst.large ? ZOOM_FACTOR : 1;
-      const selTarget = inst.selected ? ZOOM_FACTOR : 1;
+      // Flat and frozen — safe to zoom. Tier size (large/normal) eases in
+      // quickly right as it lands — a bare "settle," not a deliberate
+      // animation — and selection eases in more slowly on top of that.
+      // They multiply rather than cap, so a selected die that's already in
+      // the large tier still visibly zooms in a bit further, just against
+      // the gentler SELECT_EXTRA_FACTOR so the combined zoom stays safely
+      // inside the frustum's margin.
+      const tierTarget = inst.large ? ZOOM_FACTOR : 1;
+      if (inst.tierZoomTarget !== tierTarget) {
+        inst.tierZoomFrom = inst.tierZoomCurrent !== undefined ? inst.tierZoomCurrent : 1;
+        inst.tierZoomTarget = tierTarget;
+        inst.tierZoomStart = now;
+      }
+      const tzt = Math.min(1, (now - inst.tierZoomStart) / TIER_ZOOM_MS);
+      const tze = easeOutCubic(tzt);
+      const tierCurrent = inst.tierZoomFrom + (inst.tierZoomTarget - inst.tierZoomFrom) * tze;
+      inst.tierZoomCurrent = tierCurrent;
+
+      const selectedTarget = inst.large ? SELECT_EXTRA_FACTOR : ZOOM_FACTOR;
+      const selTarget = inst.selected ? selectedTarget : 1;
       if (inst.selZoomTarget !== selTarget) {
         inst.selZoomFrom = inst.selZoomCurrent !== undefined ? inst.selZoomCurrent : 1;
         inst.selZoomTarget = selTarget;
@@ -938,7 +957,8 @@ function tickAllDice(now) {
       const ze = easeOutCubic(zt);
       const selCurrent = inst.selZoomFrom + (inst.selZoomTarget - inst.selZoomFrom) * ze;
       inst.selZoomCurrent = selCurrent;
-      const factor = Math.min(tierFactor, selCurrent);
+
+      const factor = tierCurrent * selCurrent;
       inst.camera.position.set(BASE_CAM.x * factor, BASE_CAM.y * factor, BASE_CAM.z * factor);
     }
     inst.renderer.render(inst.scene, inst.camera);
