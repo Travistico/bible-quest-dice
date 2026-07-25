@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bible Story Dice — Test Build</title>
+<title>Bible Quest Dice — Test Build</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%B2%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
@@ -111,10 +111,11 @@
   .sidebar .panel.mode-banner {
     flex: 1;
     min-height: 0;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
   }
 
   .controls-col {
@@ -127,25 +128,41 @@
   #rollBtn { width: 100%; }
 
   .dice-amount-label { font-size: 0.9em; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--ink-soft); }
-  .dial-row { display: flex; align-items: center; justify-content: center; gap: 14px; }
-  .dial {
-    border: 2px solid var(--card-border);
+  .dice-amount-label #diceAmountValue { color: var(--brown-dark); }
+  .slider-row { display: flex; align-items: center; justify-content: center; padding: 6px 4px 2px; }
+  #diceAmountSlider {
+    width: 100%;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 8px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--brown), var(--gold));
+    outline: none;
+    cursor: pointer;
+  }
+  #diceAmountSlider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 26px; height: 26px;
     border-radius: 50%;
     background: #fffefb;
-    cursor: pointer;
-    padding: 0;
+    border: 3px solid var(--brown-dark);
     box-shadow: var(--shadow-sm);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-family: 'Baloo 2', sans-serif;
-    font-weight: 700;
-    color: var(--ink-soft);
-    line-height: 1;
-    transition: transform 0.1s ease, background 0.1s ease, border-color 0.1s ease, color 0.1s ease;
+    cursor: pointer;
   }
-  .dial:hover { border-color: var(--gold); transform: translateY(-1px); }
-  .dial.selected { background: var(--brown); border-color: var(--brown-dark); color: #fff; box-shadow: 0 0 0 3px rgba(165,85,31,0.25); }
+  #diceAmountSlider::-moz-range-thumb {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: #fffefb;
+    border: 3px solid var(--brown-dark);
+    box-shadow: var(--shadow-sm);
+    cursor: pointer;
+  }
+  #diceAmountSlider::-moz-range-track {
+    height: 8px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--brown), var(--gold));
+  }
 
   button {
     font-family: 'Nunito', sans-serif;
@@ -182,6 +199,26 @@
     box-shadow: var(--shadow-md);
     padding: 16px 20px;
   }
+  .mode-banner .mode-image {
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    line-height: 0;
+    border-radius: 12px;
+    overflow: hidden;
+    margin: 0 0 4px;
+    background: #2a1c0d;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.28), inset 0 0 0 1px rgba(255,255,255,0.15);
+  }
+  .mode-banner .mode-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 20%;
+    display: block;
+    filter: sepia(0.35) saturate(1.15) contrast(1.05) brightness(1.02);
+  }
+  .mode-banner .image-ref { font-size: 0.68em; font-weight: 700; opacity: 0.85; margin: 0 0 2px; }
+  .mode-banner .image-credit { font-size: 0.62em; font-weight: 600; opacity: 0.65; margin: 0 0 10px; font-style: italic; }
   .mode-head { display: flex; align-items: center; gap: 14px; margin-bottom: 10px; }
   .mode-glyph {
     flex-shrink: 0;
@@ -334,7 +371,7 @@
 <body>
 
 <header>
-  <h1>Bible Story Dice</h1>
+  <h1>Bible Quest Dice</h1>
   <p>Test build — for playtesting the design, not the final product</p>
 </header>
 
@@ -343,13 +380,9 @@
   <div class="sidebar">
     <div class="panel">
       <div class="controls-col">
-        <span class="dice-amount-label">Choose dice amount</span>
-        <div class="dial-row" id="diceAmountDials">
-          <button type="button" class="dial" data-value="3" style="width:27px;height:27px;font-size:0.75em;" aria-label="4 dice">4</button>
-          <button type="button" class="dial" data-value="5" style="width:38px;height:38px;font-size:0.85em;" aria-label="6 dice">6</button>
-          <button type="button" class="dial" data-value="7" style="width:49px;height:49px;font-size:0.95em;" aria-label="8 dice">8</button>
-          <button type="button" class="dial" data-value="9" style="width:60px;height:60px;font-size:1.05em;" aria-label="10 dice">10</button>
-          <button type="button" class="dial" data-value="11" style="width:71px;height:71px;font-size:1.15em;" aria-label="12 dice">12</button>
+        <span class="dice-amount-label">Choose dice amount — <span id="diceAmountValue"></span></span>
+        <div class="slider-row">
+          <input type="range" id="diceAmountSlider" min="3" max="12" step="1" value="12" aria-label="Number of dice, including the rule die">
         </div>
         <button id="rollBtn">🎲 Roll</button>
       </div>
@@ -541,6 +574,47 @@ const MODE_INFO = {
     "Give one word (no proper nouns)",
     "Everyone guesses privately",
     "Reveal all at once"]}
+};
+
+// A period engraving for each rule's goal, so the mode banner reads as more
+// than an abstract label. These are Gustave Doré's 1866 Bible illustrations
+// — public domain (Doré died 1883) — hotlinked via Wikimedia Commons'
+// Special:FilePath, which is the stable canonical path for external use and
+// survives Commons re-hashing its internal thumbnail cache.
+function doreUrl(file) {
+  return 'https://commons.wikimedia.org/wiki/Special:FilePath/' + encodeURIComponent(file).replace(/%20/g, '_') + '?width=640';
+}
+const MODE_IMAGE = {
+  "GLEAN": {
+    ref: "Ruth 2:2-3, 17-18",
+    credit: "Gustave Doré, 1866 — “Ruth and Boaz”",
+    url: doreUrl("069.Ruth and Boaz.jpg")
+  },
+  "FOCUS": {
+    ref: "Luke 10:38-42",
+    credit: "Gustave Doré — “Christ in the House of Martha and Mary”",
+    url: doreUrl("Jesus talks with Mary and Martha in their house.jpg")
+  },
+  "LAW": {
+    ref: "Exodus 34:29",
+    credit: "Gustave Doré, 1866 — “Moses Comes Down from Mount Sinai”",
+    url: doreUrl("039.Moses Comes Down from Mount Sinai.jpg")
+  },
+  "REFLECT": {
+    ref: "Luke 15:17-18",
+    credit: "Gustave Doré — “The Prodigal Son Decides to Return to His Father”",
+    url: doreUrl("Gustave Dore - The prodigal son decides to return to his father.jpg")
+  },
+  "QUESTION": {
+    ref: "Mark 10:13-14; Matthew 18:3-4",
+    credit: "Gustave Doré — “Jesus Blessing the Little Children”",
+    url: doreUrl("Jésus et les Enfants.jpg")
+  },
+  "RIDDLE": {
+    ref: "Judges 14:5-6, 14",
+    credit: "Gustave Doré, 1866 — “Samson Slays a Lion”",
+    url: doreUrl("060.Samson Slays a Lion.jpg")
+  }
 };
 
 /* ============================= 3D DICE ENGINE ============================= */
@@ -1041,19 +1115,27 @@ function render() {
 }
 
 function renderControls() {
-  document.querySelectorAll('#diceAmountDials .dial').forEach(btn => {
-    const val = parseInt(btn.dataset.value, 10);
-    btn.classList.toggle('selected', val === state.diceCount);
-    btn.onclick = () => { state.diceCount = val; renderControls(); };
-  });
+  const slider = document.getElementById('diceAmountSlider');
+  const total = state.diceCount + 1; // +1 for the black rule die, always rolled
+  slider.value = total;
+  document.getElementById('diceAmountValue').textContent = total + ' dice';
+  slider.oninput = () => {
+    const newTotal = parseInt(slider.value, 10);
+    state.diceCount = newTotal - 1;
+    document.getElementById('diceAmountValue').textContent = newTotal + ' dice';
+  };
 }
 
 function renderModeBanner() {
   const info = MODE_INFO[state.mode];
   const st = MODE_STYLE[state.mode];
+  const img = MODE_IMAGE[state.mode];
   const el = document.getElementById('modeBanner');
   el.style.background = 'linear-gradient(155deg, ' + st.color + ', ' + st.color + 'cc)';
   el.innerHTML =
+    '<div class="mode-image"><img src="' + img.url + '" alt="' + img.credit.replace(/"/g, '&quot;') + '" loading="lazy" onerror="this.closest(\'.mode-image\').style.display=\'none\'"></div>' +
+    '<div class="image-ref">' + img.ref + '</div>' +
+    '<div class="image-credit">' + img.credit + '</div>' +
     '<div class="mode-head"><span class="mode-glyph">' + st.glyph + '</span>' +
     '<div><h2>' + state.mode + '</h2> <span class="goal">— ' + info.goal + '</span></div></div>' +
     '<p class="mode-steps">' + info.steps.join(' &nbsp;→&nbsp; ') + '</p>' +

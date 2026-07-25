@@ -1,4 +1,4 @@
-# Bible Story Dice — Design Document
+# Bible Quest Dice — Design Document
 
 **Version 0.1 — working draft**
 *(Working title only. Avoid "Story Cubes" in any published name — see Notes on IP.)*
