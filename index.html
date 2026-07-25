@@ -922,10 +922,18 @@ function tickAllDice(now) {
     inst.mesh.position.y = t < 1 ? Math.sin(Math.PI * t) * a.hop : 0;
 
     if (t < 1) {
-      // Still tumbling: hold the proven-safe wide framing and clear both
-      // zoom timers so the next landing eases in clean.
+      // Still tumbling: hold the proven-safe wide framing, and reset BOTH
+      // the target *and* current zoom bookkeeping to match (1 = wide) —
+      // not just the target. The rule die persists across rolls and can
+      // re-tumble while it was already zoomed in from a prior landing; if
+      // "current" were left stale at, say, 0.72, the next landing would
+      // ease "from" that stale value straight back to the same 0.72 — a
+      // same-value no-op that snaps instantly instead of easing, reading
+      // as an unprompted pop rather than a clean settle.
       inst.tierZoomTarget = undefined;
+      inst.tierZoomCurrent = 1;
       inst.selZoomTarget = undefined;
+      inst.selZoomCurrent = 1;
       inst.camera.position.set(BASE_CAM.x, BASE_CAM.y, BASE_CAM.z);
     } else {
       // Flat and frozen — safe to zoom. Tier size (large/normal) eases in
@@ -1255,13 +1263,14 @@ function renderPool() {
       inst.wrapper = wrapper;
       inst.currentFace = state.ruleDie.face;
       diceInstances.set('rule-die', inst);
-    } else if (inst.currentFace !== state.ruleDie.face) {
+    } else if (inst.currentFace !== state.ruleDie.face || inst.large !== isCompact) {
+      // Also retrigger (a fresh tumble) when only the size tier changed and
+      // the face happens to land the same as before — otherwise the rule
+      // die would silently resize while just sitting there with no roll to
+      // explain it, which reads as a glitch rather than a deliberate change.
       retriggerDie(inst, MODE_DIE_FACES, state.ruleDie.face, getGlyph, true);
       inst.currentFace = state.ruleDie.face;
     }
-    // The rule die persists across rolls (only its face is retriggered), so
-    // its "large" framing needs to track the current layout independently
-    // of whether a retrigger happened this pass.
     diceInstances.get('rule-die').large = isCompact;
   }
 
