@@ -1,0 +1,1047 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bible Story Dice — Test Build</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%B2%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<style>
+  :root {
+    --bg-top: #f7c948;
+    --bg-bottom: #ee9f3d;
+    --paper: #fffaf0;
+    --card: #ffffff;
+    --card-border: #f0e2c8;
+    --ink: #3a2c1a;
+    --ink-soft: #83725a;
+    --brown: #a5551f;
+    --brown-dark: #7a3c14;
+    --gold: #e0a527;
+    --claim: #eafaf0;
+    --claim-border: #4caf7d;
+    --accent: #e0562f;
+    --accent-dark: #c8431f;
+    --danger: #d1453b;
+    --shadow-sm: 0 2px 0 rgba(0,0,0,0.08);
+    --shadow-md: 0 6px 16px rgba(90,50,10,0.18);
+    --shadow-lg: 0 12px 30px rgba(90,50,10,0.22);
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    margin: 0;
+    font-family: 'Nunito', 'Segoe UI', sans-serif;
+    background: linear-gradient(160deg, var(--bg-top), var(--bg-bottom));
+    background-attachment: fixed;
+    color: var(--ink);
+    display: flex;
+    flex-direction: column;
+  }
+  header {
+    padding: 2px 20px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  header h1 {
+    margin: 0;
+    font-family: 'Baloo 2', sans-serif;
+    font-weight: 800;
+    font-size: 1em;
+    letter-spacing: 0.5px;
+    color: #3a2408;
+    text-shadow: 1px 2px 0 rgba(255,255,255,0.35);
+    display: inline;
+  }
+  header p { margin: 0 0 0 8px; font-size: 0.65em; font-weight: 700; color: #5c3d10; opacity: 0.85; display: inline; }
+
+  .wrap {
+    max-width: 2000px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 6px 12px;
+    background: var(--paper);
+    border-radius: 28px;
+    box-shadow: var(--shadow-lg);
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    overflow: hidden;
+  }
+
+  .sidebar {
+    flex: 0 0 500px;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: 18px;
+    padding: 8px 12px;
+    margin: 0 0 6px;
+    box-shadow: var(--shadow-sm);
+    flex-shrink: 0;
+  }
+  .panel.pool-panel {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 0;
+    overflow: hidden;
+    padding: 6px 8px;
+  }
+  .sidebar .panel.mode-banner {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .controls-col {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: stretch;
+  }
+  .controls-col .dice-amount-label { text-align: center; }
+  #rollBtn { width: 100%; }
+
+  .dice-amount-label { font-size: 0.9em; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: var(--ink-soft); }
+  .dial-row { display: flex; align-items: center; justify-content: center; gap: 14px; }
+  .dial {
+    border: 2px solid var(--card-border);
+    border-radius: 50%;
+    background: #fffefb;
+    cursor: pointer;
+    padding: 0;
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Baloo 2', sans-serif;
+    font-weight: 700;
+    color: var(--ink-soft);
+    line-height: 1;
+    transition: transform 0.1s ease, background 0.1s ease, border-color 0.1s ease, color 0.1s ease;
+  }
+  .dial:hover { border-color: var(--gold); transform: translateY(-1px); }
+  .dial.selected { background: var(--brown); border-color: var(--brown-dark); color: #fff; box-shadow: 0 0 0 3px rgba(165,85,31,0.25); }
+
+  button {
+    font-family: 'Nunito', sans-serif;
+    font-weight: 800;
+    cursor: pointer;
+    border: none;
+    background: var(--brown);
+    color: #fff;
+    border-radius: 999px;
+    padding: 10px 18px;
+    font-size: 0.88em;
+    box-shadow: var(--shadow-sm);
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
+  }
+  button:hover { filter: brightness(1.08); }
+  button:active { transform: translateY(2px); box-shadow: none; }
+  button.secondary { background: #fff; color: var(--brown); border: 2px solid var(--card-border); box-shadow: none; }
+  button.secondary:hover { background: #fdf3e2; }
+  button.small { padding: 5px 12px; font-size: 0.75em; }
+  button.danger { background: var(--danger); }
+  button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  #rollBtn {
+    font-size: 1.15em;
+    padding: 13px 30px;
+    background: var(--accent);
+    box-shadow: 0 4px 0 var(--accent-dark);
+  }
+  #rollBtn:active { box-shadow: 0 1px 0 var(--accent-dark); }
+
+  .mode-banner {
+    color: #fff;
+    border: none;
+    box-shadow: var(--shadow-md);
+    padding: 16px 20px;
+  }
+  .mode-head { display: flex; align-items: center; gap: 14px; margin-bottom: 10px; }
+  .mode-glyph {
+    flex-shrink: 0;
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.22);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5em;
+    font-family: 'Baloo 2', sans-serif;
+  }
+  .mode-banner h2 { margin: 0; font-family: 'Baloo 2', sans-serif; font-size: 1.4em; letter-spacing: 0.5px; }
+  .mode-banner .goal { font-weight: 700; opacity: 0.92; margin: 2px 0 0; font-size: 0.9em; display: block; }
+  .mode-banner .mode-steps { margin: 0 0 10px; font-size: 0.92em; font-weight: 600; line-height: 1.5; }
+  .mode-banner .mode-actions { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+  .mode-banner .mode-actions button.secondary { background: rgba(255,255,255,0.15); color: #fff; border-color: rgba(255,255,255,0.5); }
+  .mode-banner .mode-actions button.secondary:hover { background: rgba(255,255,255,0.28); }
+  .mode-banner .mode-actions .hint-text { font-size: 0.8em; opacity: 0.85; font-weight: 600; }
+
+  .pool-grid {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-auto-rows: 1fr;
+    gap: 4px 4px;
+    align-content: stretch;
+  }
+  .die-card {
+    border: none;
+    background: transparent;
+    padding: 1px 1px;
+    text-align: center;
+    position: relative;
+    cursor: pointer;
+    user-select: none;
+    transition: transform 0.15s ease;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .die-card:hover { transform: translateY(-3px); }
+  .die-card:active { transform: translateY(-1px); }
+
+  .cube-slot {
+    width: 100%;
+    flex: 1;
+    min-height: 0;
+    position: relative;
+    border-radius: 16px;
+    overflow: visible;
+    transition: box-shadow 0.15s ease;
+  }
+  .cube-slot canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+  .die-card .die-cat {
+    flex-shrink: 0;
+    font-size: 0.6em;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--ink-soft);
+    margin-top: 2px;
+    line-height: 1.2;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .die-card.selected .cube-slot {
+    box-shadow: 0 0 0 3px var(--claim-border), 0 0 16px rgba(76,175,125,0.45);
+  }
+  .die-card.rule-die { cursor: default; }
+  .die-card.rule-die:hover { transform: none; }
+  .die-card.rule-die .die-cat { color: #3a2c1a; font-weight: 800; }
+  .die-card.selected::after {
+    content: "✓";
+    position: absolute; top: -6px; right: -2px;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--claim-border); color: #fff;
+    font-size: 0.7em; font-weight: 900;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: var(--shadow-sm);
+  }
+  .die-card .die-tools {
+    position: absolute;
+    top: 2px; right: 2px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.12s ease;
+    z-index: 2;
+  }
+  .die-card:hover .die-tools,
+  .die-card:focus-within .die-tools { opacity: 1; pointer-events: auto; }
+  .die-card .die-tools button {
+    padding: 1px 6px;
+    font-size: 0.58em;
+    border-radius: 999px;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .setaside-list { flex-shrink: 0; font-size: 0.75em; color: var(--ink-soft); margin-top: 2px; }
+  .setaside-list ul { list-style: none; margin: 2px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 5px; }
+  .setaside-list li { background: #f3ece0; border-radius: 999px; padding: 2px 10px; font-weight: 600; }
+
+  .empty-pool { text-align: center; padding: 12px; color: var(--ink-soft); font-weight: 700; }
+
+  h3.section-title { flex-shrink: 0; margin: 0 0 3px; font-family: 'Baloo 2', sans-serif; color: var(--brown-dark); font-size: 0.85em; }
+
+  /* Modal */
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(40,20,0,0.55);
+    z-index: 50;
+    align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-box {
+    background: var(--card);
+    border-radius: 22px;
+    max-width: 560px;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+    padding: 24px;
+    position: relative;
+    box-shadow: var(--shadow-lg);
+  }
+  .modal-box h2 { margin-top: 0; font-family: 'Baloo 2', sans-serif; color: var(--brown-dark); }
+  .modal-box .close-x { position: absolute; top: 14px; right: 16px; background: #f3ece0; color: var(--ink-soft); border-radius: 50%; width: 30px; height: 30px; font-size: 1.1em; padding: 0; box-shadow: none; }
+  .ref-section { margin-bottom: 12px; }
+  .ref-section .label { font-size: 0.7em; text-transform: uppercase; letter-spacing: 0.5px; color: var(--accent); font-weight: 800; }
+  .ref-section .content { font-size: 0.98em; }
+
+  .badge { display: inline-block; background: var(--accent); color: #fff; border-radius: 999px; padding: 2px 10px; font-size: 0.68em; font-weight: 800; margin-left: 6px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Bible Story Dice</h1>
+  <p>Test build — for playtesting the design, not the final product</p>
+</header>
+
+<div class="wrap">
+
+  <div class="sidebar">
+    <div class="panel">
+      <div class="controls-col">
+        <span class="dice-amount-label">Choose dice amount</span>
+        <div class="dial-row" id="diceAmountDials">
+          <button type="button" class="dial" data-value="5" style="width:38px;height:38px;font-size:0.85em;" aria-label="5 dice">5</button>
+          <button type="button" class="dial" data-value="7" style="width:49px;height:49px;font-size:0.95em;" aria-label="7 dice">7</button>
+          <button type="button" class="dial" data-value="9" style="width:60px;height:60px;font-size:1.05em;" aria-label="9 dice">9</button>
+          <button type="button" class="dial" data-value="11" style="width:71px;height:71px;font-size:1.15em;" aria-label="11 dice">11</button>
+        </div>
+        <button id="rollBtn">🎲 Roll</button>
+      </div>
+    </div>
+
+    <div class="panel mode-banner" id="modeBanner"></div>
+  </div>
+
+  <div class="panel pool-panel">
+    <h3 class="section-title">The Pool <span id="poolCount" class="badge"></span></h3>
+    <div class="pool-grid" id="poolGrid"></div>
+    <div class="setaside-list" id="setAsideList"></div>
+  </div>
+
+</div>
+
+<!-- Reference modal -->
+<div class="modal-overlay" id="refModal">
+  <div class="modal-box">
+    <button class="close-x" data-close="refModal">×</button>
+    <h2 id="refFaceName"></h2>
+    <div id="refDieLabel" style="font-size:0.8em;color:var(--ink-soft);margin-top:-8px;margin-bottom:10px;"></div>
+    <div class="ref-section" id="refVerses"></div>
+    <div class="ref-section" id="refMeaning"></div>
+    <div class="ref-section" id="refAsk"></div>
+  </div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+
+/* ============================= DATA ============================= */
+
+const CORE_DICE = [
+  {id:1, name:"Living Waters", faces:["water/waves","wine","well","river","rain cloud","cup"]},
+  {id:2, name:"Light & Fire", faces:["sun","flame","oil lamp","star","rainbow","lightning"]},
+  {id:3, name:"Bread & Harvest", faces:["loaves","wheat sheaf","grapes on the vine","olive branch","honeycomb","salt"]},
+  {id:4, name:"Flocks & Creatures", faces:["lamb","dove","lion","serpent","fish","ox"]},
+  {id:5, name:"Places & States", faces:["mountain","garden","wilderness","field","city gate","path"]},
+  {id:6, name:"Green & Growing", faces:["tree","seed","fig","lily","palm branch","thorns"]},
+  {id:7, name:"People & Callings", faces:["shepherd","king","child","bride","servant","elder"]},
+  {id:8, name:"Holy Things", faces:["altar","tablets of the law","temple","incense","bread-and-cup","menorah"]},
+  {id:9, name:"Way & Passage", faces:["door","key","boat","ladder","scales","yoke"]},
+  {id:10, name:"Signs & Wonders", faces:["burning bush","pillar of fire","parted sea","manna","empty tomb","locust swarm"]},
+  {id:11, name:"Bonds & Covenant", faces:["ark of the covenant","wedding ring","handclasp","broken chain","anchor","cornerstone"]},
+  {id:12, name:"Vessels & Instruments", faces:["sword","clay vessel","scroll","garment/robe","net","crown"]}
+];
+const MODE_DIE_FACES = ["GLEAN","FOCUS","STORY LAW","REFLECT","QUESTION","RIDDLE"];
+
+const MODE_STYLE = {
+  "GLEAN":     {color:"#3d7a4f", glyph:"⁘"},
+  "FOCUS":     {color:"#2f6690", glyph:"◎"},
+  "STORY LAW": {color:"#9c3b3b", glyph:"⌇"},
+  "REFLECT":   {color:"#6b4a8a", glyph:"⇋"},
+  "QUESTION":  {color:"#c9701f", glyph:"?"},
+  "RIDDLE":    {color:"#1f8a8a", glyph:"⁇"}
+};
+
+const EMOJI_MAP = {
+  "water/waves":"🌊", "wine":"🍷", "well":"🪣", "river":"🏞️", "rain cloud":"🌧️", "cup":"🍶",
+  "sun":"☀️", "flame":"🔥", "oil lamp":"🪔", "star":"⭐", "rainbow":"🌈", "lightning":"⚡",
+  "loaves":"🍞", "wheat sheaf":"🌾", "grapes on the vine":"🍇", "olive branch":"🫒", "honeycomb":"🍯", "salt":"🧂",
+  "lamb":"🐑", "dove":"🕊️", "lion":"🦁", "serpent":"🐍", "fish":"🐟", "ox":"🐂",
+  "mountain":"⛰️", "garden":"🌿", "wilderness":"🏜️", "field":"🌻", "city gate":"🏛️", "path":"🛤️",
+  "tree":"🌳", "seed":"🌱", "fig":"🍐", "lily":"🌸", "palm branch":"🌴", "thorns":"🥀",
+  "shepherd":"🧑‍🌾", "king":"🤴", "child":"🧒", "bride":"👰", "servant":"🙇", "elder":"🧓",
+  "altar":"🕯️", "tablets of the law":"🗿", "temple":"🛕", "incense":"💨", "bread-and-cup":"🍞🍷", "menorah":"🕎",
+  "door":"🚪", "key":"🔑", "boat":"⛵", "ladder":"🪜", "scales":"⚖️", "yoke":"🔗",
+  "burning bush":"🔥🌿", "pillar of fire":"🔥", "parted sea":"🌊", "manna":"🥖", "empty tomb":"🪦", "locust swarm":"🦗",
+  "ark of the covenant":"📦", "wedding ring":"💍", "handclasp":"🤝", "broken chain":"⛓️", "anchor":"⚓", "cornerstone":"🪨",
+  "sword":"⚔️", "clay vessel":"🏺", "scroll":"📜", "garment/robe":"👘", "net":"🕸️", "crown":"👑"
+};
+
+const FACE_REF = {
+  "water/waves": {die:"Living Waters", meaning:"Truth in its most general form — also chaos, the deep.", verses:["Genesis 1:2","Exodus 14:21-22","John 4:14","John 7:38"], ask:"Is this water that drowns, or water that saves?"},
+  "wine": {die:"Living Waters", meaning:"Truth flowing from good; joy; the new covenant.", verses:["John 2:1-11","Matthew 26:27-29","Isaiah 25:6"], ask:"What has been turned to wine here — and by whom?"},
+  "well": {die:"Living Waters", meaning:"The source truth is drawn from.", verses:["Genesis 29:1-10","John 4:5-15","Genesis 21:19"], ask:"Who dug this well, and who is being turned away from it?"},
+  "river": {die:"Living Waters", meaning:"Doctrine flowing; abundance.", verses:["Genesis 2:10-14","Ezekiel 47:1-12","Revelation 22:1"], ask:"Where does this river begin, and what does it make grow?"},
+  "rain cloud": {die:"Living Waters", meaning:"The Word in its outer, literal sense; provision.", verses:["Genesis 7:4","1 Kings 18:41-45","Matthew 5:45"], ask:"Is this rain a judgment or a mercy?"},
+  "cup": {die:"Living Waters", meaning:"Your own reception — what you take in, or must drink.", verses:["Psalm 23:5","Matthew 26:39","1 Corinthians 11:25"], ask:"Whose cup is this, and are they willing to drink it?"},
+
+  "sun": {die:"Light & Fire", meaning:"The Lord; Divine love as the source of all light and warmth.", verses:["Malachi 4:2","Matthew 17:2","Revelation 1:16"], ask:"What is being warmed, or scorched, by this sun?"},
+  "flame": {die:"Light & Fire", meaning:"Love — for good or for destruction.", verses:["Exodus 3:2","Acts 2:3","1 Corinthians 13:1"], ask:"Does this flame purify or consume?"},
+  "oil lamp": {die:"Light & Fire", meaning:"Truth and faith, kept burning by love (oil).", verses:["Matthew 25:1-13","Psalm 119:105","Exodus 27:20"], ask:"Whose lamp went out, and why?"},
+  "star": {die:"Light & Fire", meaning:"Truth as guide; a distant faith to be followed.", verses:["Matthew 2:2","Genesis 15:5","Daniel 12:3"], ask:"Who is following this star, and where is it leading them?"},
+  "rainbow": {die:"Light & Fire", meaning:"The state of a reborn person; covenant remembered.", verses:["Genesis 9:12-17"], ask:"What storm came just before this sign?"},
+  "lightning": {die:"Light & Fire", meaning:"Divine truth striking with power; sudden revelation.", verses:["Luke 10:18","Matthew 24:27","Job 37:3"], ask:"What does this flash reveal that the dark had hidden?"},
+
+  "loaves": {die:"Bread & Harvest", meaning:"The good of love; sustenance freely given.", verses:["John 6:9-13","Exodus 16:4","Matthew 6:11"], ask:"Who is being fed, and is there ever not enough?"},
+  "wheat sheaf": {die:"Bread & Harvest", meaning:"The church's harvest; truth ready to be gathered.", verses:["Matthew 13:30","Ruth 2:2-3","John 4:35"], ask:"Is this a harvest of grain, or of people?"},
+  "grapes on the vine": {die:"Bread & Harvest", meaning:"The spiritual church; fruit that must abide to grow.", verses:["John 15:1-5","Numbers 13:23","Isaiah 5:1-7"], ask:"What happens to a branch that doesn't abide?"},
+  "olive branch": {die:"Bread & Harvest", meaning:"Celestial good; peace after judgment.", verses:["Genesis 8:11","Romans 11:17","Zechariah 4:3"], ask:"What flood, literal or otherwise, does this branch answer?"},
+  "honeycomb": {die:"Bread & Harvest", meaning:"The delight of good; sweetness out of hardship.", verses:["Judges 14:8-9","Psalm 19:10","Exodus 3:8"], ask:"What struggle produced this sweetness?"},
+  "salt": {die:"Bread & Harvest", meaning:"The longing that binds truth to good; preservation, covenant.", verses:["Matthew 5:13","Leviticus 2:13","Colossians 4:6"], ask:"What has lost its savor here?"},
+
+  "lamb": {die:"Flocks & Creatures", meaning:"Innocence; the sacrifice that bears sin.", verses:["Exodus 12:3-13","John 1:29","Isaiah 53:7"], ask:"Whose innocence is at stake in this scene?"},
+  "dove": {die:"Flocks & Creatures", meaning:"The holy; peace; gentleness of spirit.", verses:["Genesis 8:8-12","Matthew 3:16","Song of Songs 2:14"], ask:"What is this dove searching for, and does it find it?"},
+  "lion": {die:"Flocks & Creatures", meaning:"Truth in power — protective or devouring.", verses:["Judges 14:5-6","1 Peter 5:8","Revelation 5:5"], ask:"Is this lion guarding something, or hunting it?"},
+  "serpent": {die:"Flocks & Creatures", meaning:"The sensual; cunning; the lowest natural impulse.", verses:["Genesis 3:1-5","Numbers 21:8-9","Matthew 10:16"], ask:"What is being tempted here, and with what half-truth?"},
+  "fish": {die:"Flocks & Creatures", meaning:"Facts; natural truths; ordinary knowledge multiplied.", verses:["Matthew 4:19","John 21:6-11","Matthew 14:17-20"], ask:"Are these fish caught, given, or multiplied — and by whom?"},
+  "ox": {die:"Flocks & Creatures", meaning:"Natural good; strength put to steady, humble work.", verses:["Proverbs 14:4","Luke 14:19","1 Corinthians 9:9"], ask:"What labor is this ox carrying that no one else will?"},
+
+  "mountain": {die:"Places & States", meaning:"Love; nearness to the Lord; a place of encounter.", verses:["Exodus 19:20","Matthew 17:1-2","Matthew 5:1"], ask:"Who climbed this mountain, and what did it cost them?"},
+  "garden": {die:"Places & States", meaning:"Intelligence, innocence; a cultivated inner state.", verses:["Genesis 2:8-9","John 19:41","Song of Songs 4:12"], ask:"Is this garden being tended, or lost?"},
+  "wilderness": {die:"Places & States", meaning:"Temptation, testing; the dry and formative stretch.", verses:["Deuteronomy 8:2","Matthew 4:1-2","Exodus 16:2-3"], ask:"What is this wilderness revealing that comfort couldn't?"},
+  "field": {die:"Places & States", meaning:"The church as to good; a place things are sown and grow.", verses:["Matthew 13:24","Ruth 2:2","John 4:35"], ask:"What has been sown in this field, and by whom?"},
+  "city gate": {die:"Places & States", meaning:"Doctrine; the place judgment and welcome happen.", verses:["Ruth 4:1","Revelation 21:12-21","Genesis 19:1"], ask:"Who is being judged, or welcomed, at this gate?"},
+  "path": {die:"Places & States", meaning:"\"The way\"; truth leading toward good, or away from it.", verses:["Psalm 119:105","Matthew 7:13-14","John 14:6"], ask:"Where does this path actually lead — and who's walking it unknowingly?"},
+
+  "tree": {die:"Green & Growing", meaning:"The whole person; perception, and what a life produces.", verses:["Matthew 7:17-18","Psalm 1:3","Genesis 2:9"], ask:"What kind of fruit does this tree actually bear?"},
+  "seed": {die:"Green & Growing", meaning:"Truth sown, waiting on the condition of the soil.", verses:["Matthew 13:3-9","Mark 4:26-29","John 12:24"], ask:"What kind of soil is receiving this seed?"},
+  "fig": {die:"Green & Growing", meaning:"Natural good; the ordinary blessing that can also fail.", verses:["Mark 11:12-14","Luke 13:6-9","1 Kings 4:25"], ask:"Why is this fig tree bearing, or not bearing, fruit?"},
+  "lily": {die:"Green & Growing", meaning:"Pure trust; beauty that doesn't strive.", verses:["Matthew 6:28-29","Song of Songs 2:1","Hosea 14:5"], ask:"What is this lily being compared to, and why?"},
+  "palm branch": {die:"Green & Growing", meaning:"Victory; the good of truth publicly acknowledged.", verses:["John 12:13","Leviticus 23:40","Revelation 7:9"], ask:"Is this victory being received rightly, or too soon?"},
+  "thorns": {die:"Green & Growing", meaning:"The cares of the world; what chokes good growth.", verses:["Mark 4:18-19","Genesis 3:18","Matthew 27:29"], ask:"What is being choked out here, and by what worry?"},
+
+  "shepherd": {die:"People & Callings", meaning:"One who leads toward good; watchful care.", verses:["Psalm 23:1","John 10:11","Ezekiel 34:2-4"], ask:"Is this a shepherd who stays, or one who flees?"},
+  "king": {die:"People & Callings", meaning:"Divine truth reigning; rightful or corrupted authority.", verses:["1 Samuel 8:5-7","Revelation 19:16","John 18:36"], ask:"What kind of kingdom is actually being ruled here?"},
+  "child": {die:"People & Callings", meaning:"Innocence; the posture required to receive.", verses:["Matthew 18:3","Mark 10:14-16","Isaiah 11:6"], ask:"What does this child understand that the adults don't?"},
+  "bride": {die:"People & Callings", meaning:"The church joined to the Lord; covenant love.", verses:["Revelation 19:7","Ephesians 5:25-27","Hosea 2:19-20"], ask:"What is this union costing, or completing?"},
+  "servant": {die:"People & Callings", meaning:"Truth held in willing obedience.", verses:["Isaiah 53:11","Philippians 2:7","John 13:14-15"], ask:"What is this servant being asked to do that a master wouldn't?"},
+  "elder": {die:"People & Callings", meaning:"Wisdom; accumulated understanding.", verses:["1 Timothy 5:17","Revelation 4:4","Job 12:12"], ask:"Is this elder's wisdom being sought, or ignored?"},
+
+  "altar": {die:"Holy Things", meaning:"Worship arising from good; the place something is given up.", verses:["Genesis 22:9","1 Kings 18:30-38","Genesis 8:20"], ask:"What is actually being offered on this altar?"},
+  "tablets of the law": {die:"Holy Things", meaning:"Divine truth, covenant, the fixed standard.", verses:["Exodus 31:18","Exodus 32:19","Deuteronomy 10:1-5"], ask:"Is this covenant being kept, broken, or renewed?"},
+  "temple": {die:"Holy Things", meaning:"Heaven and the Lord's presence; also the reborn person.", verses:["John 2:19-21","1 Kings 8:10-11","1 Corinthians 6:19"], ask:"Who or what is dwelling in this temple?"},
+  "incense": {die:"Holy Things", meaning:"Grateful worship rising; prayer ascending.", verses:["Psalm 141:2","Luke 1:8-10","Revelation 8:3-4"], ask:"Whose prayer is rising here, and for what?"},
+  "bread-and-cup": {die:"Holy Things", meaning:"Good and truth together; communion, remembrance.", verses:["Luke 22:19-20","1 Corinthians 11:23-26","John 6:53-56"], ask:"What is being remembered, and by whom, at this table?"},
+  "menorah": {die:"Holy Things", meaning:"Divine truth giving light continually.", verses:["Exodus 25:31-37","Zechariah 4:2","Revelation 1:12-13"], ask:"What is this light illuminating that darkness was hiding?"},
+
+  "door": {die:"Way & Passage", meaning:"The Lord as the way in; an entrance, or a refusal.", verses:["John 10:9","Revelation 3:20","Matthew 25:10"], ask:"Who is on the other side of this door — knocking, or being kept out?"},
+  "key": {die:"Way & Passage", meaning:"The power to open or to bind.", verses:["Matthew 16:19","Revelation 1:18","Isaiah 22:22"], ask:"What is this key meant to open — and who's been trusted with it?"},
+  "boat": {die:"Way & Passage", meaning:"What carries you through; the church that saves.", verses:["Genesis 7:1","Matthew 8:23-27","Matthew 14:29"], ask:"Is this boat sinking, or simply being tested?"},
+  "ladder": {die:"Way & Passage", meaning:"Heaven joined to earth.", verses:["Genesis 28:12","John 1:51"], ask:"What is descending this ladder, and what is it bringing?"},
+  "scales": {die:"Way & Passage", meaning:"Judgment and equity.", verses:["Proverbs 11:1","Daniel 5:27","Job 31:6"], ask:"Who is being weighed here, and by what standard?"},
+  "yoke": {die:"Way & Passage", meaning:"Conjunction and service; what you're bound to and pull with.", verses:["Matthew 11:29-30","2 Corinthians 6:14","Jeremiah 5:5"], ask:"Whose yoke is actually being carried here?"},
+
+  "burning bush": {die:"Signs & Wonders", meaning:"Divine presence within an ordinary thing, unconsumed.", verses:["Exodus 3:2-4"], ask:"What is burning here without being consumed?"},
+  "pillar of fire": {die:"Signs & Wonders", meaning:"Guidance and protection made visible by night.", verses:["Exodus 13:21-22"], ask:"What is lighting the way when everything else has gone dark?"},
+  "parted sea": {die:"Signs & Wonders", meaning:"A way opened where none should exist; deliverance through the impossible.", verses:["Exodus 14:21-22"], ask:"What sea is standing in the way, and who is holding it back?"},
+  "manna": {die:"Signs & Wonders", meaning:"Provision that can't be stored or hoarded — given one day at a time.", verses:["Exodus 16:14-15","Exodus 16:31","John 6:31-35"], ask:"What are you trying to store up that was only ever meant for today?"},
+  "empty tomb": {die:"Signs & Wonders", meaning:"Death overturned; the reversal no one expected.", verses:["Matthew 28:5-6","John 20:1-8"], ask:"What was assumed finished that turned out not to be?"},
+  "locust swarm": {die:"Signs & Wonders", meaning:"Judgment that strips away what was falsely trusted in.", verses:["Exodus 10:12-15","Joel 1:4"], ask:"What has this swarm exposed as never having been secure?"},
+
+  "ark of the covenant": {die:"Bonds & Covenant", meaning:"The Lord's presence carried among His people; where mercy and law meet.", verses:["Exodus 25:10-22","2 Samuel 6:6-7"], ask:"Who is approaching this ark, and how carefully?"},
+  "wedding ring": {die:"Bonds & Covenant", meaning:"A covenant sealed and worn, not just spoken.", verses:["Hosea 2:19-20","Ephesians 5:31-32"], ask:"What promise is this ring actually holding together?"},
+  "handclasp": {die:"Bonds & Covenant", meaning:"Agreement sealed in trust between two parties.", verses:["Ezra 10:19","Galatians 2:9"], ask:"What was just agreed to, and can it be trusted?"},
+  "broken chain": {die:"Bonds & Covenant", meaning:"Bondage ended; freedom given, not earned.", verses:["Acts 12:6-7","Psalm 107:14","Isaiah 61:1"], ask:"What chain just came off, and who removed it?"},
+  "anchor": {die:"Bonds & Covenant", meaning:"Hope that holds even when everything else moves.", verses:["Hebrews 6:19"], ask:"What is this anchor holding steady against?"},
+  "cornerstone": {die:"Bonds & Covenant", meaning:"The rejected stone everything else ends up built on.", verses:["Psalm 118:22","Matthew 21:42","Ephesians 2:20"], ask:"Who rejected this stone, and what got built on it anyway?"},
+
+  "sword": {die:"Vessels & Instruments", meaning:"Divine truth fighting falsity; the Word wielded as a weapon.", verses:["Ephesians 6:17","Hebrews 4:12","Matthew 10:34"], ask:"What untruth is this sword actually cutting against?"},
+  "clay vessel": {die:"Vessels & Instruments", meaning:"The receptacle — ordinary, breakable, chosen anyway to hold something precious.", verses:["2 Corinthians 4:7","John 2:6-10","1 Kings 17:12-16"], ask:"What treasure is being carried in a vessel this fragile?"},
+  "scroll": {die:"Vessels & Instruments", meaning:"The Word itself — written, sealed, or opened.", verses:["Ezekiel 2:9-10","Revelation 5:1-5","Luke 4:17-21"], ask:"Who is worthy to open this scroll, and what happens when they do?"},
+  "garment/robe": {die:"Vessels & Instruments", meaning:"Truth clothing good; the outer sign of an inner change.", verses:["Genesis 37:3","Luke 15:22","Mark 5:27-29"], ask:"What does this garment reveal, or cover, about the one wearing it?"},
+  "net": {die:"Vessels & Instruments", meaning:"Teaching that gathers; a wide reach meant to catch many.", verses:["Matthew 4:19","Matthew 13:47-48","John 21:6"], ask:"Who is being gathered by this net, and is the catch sorted yet?"},
+  "crown": {die:"Vessels & Instruments", meaning:"Wisdom, victory, and reward — or their bitter mockery.", verses:["James 1:12","Revelation 2:10","Matthew 27:29"], ask:"Is this crown being earned, given, or mocked?"}
+};
+
+const MODE_INFO = {
+  "GLEAN": {goal:"Gather what's usable; leave the rest standing.", steps:[
+    "Claim any dice that relate",
+    "Name the passage/story",
+    "Say the lesson",
+    "(optional) Set one aside, and why"]},
+  "FOCUS": {goal:"Depth over breadth, and an opening to learn.", steps:[
+    "Choose one die",
+    "Say what it brings to mind",
+    "Open the floor"]},
+  "STORY LAW": {goal:"Build a story that fulfils a command of God.", steps:[
+    "Draw a command (d10/Teaching Deck)",
+    "Roll & invent a scene",
+    "Solo, or relay one die per beat",
+    "Land it — kept or given up"]},
+  "REFLECT": {goal:"What scripture says we should be working on.", steps:[
+    "Claim a face",
+    "What's being worked on",
+    "Why it matters",
+    "How scripture counsels",
+    "(optional) Where you are in it"]},
+  "QUESTION": {goal:"Open discussion without needing the answer.", steps:[
+    "Claim the dice behind it",
+    "Ask one question",
+    "Open the floor (asker last)",
+    "(optional) Ground it in scripture"]},
+  "RIDDLE": {goal:"One clue, one guess, everyone at once.", steps:[
+    "Pick a story, lay out dice",
+    "Give one word (no proper nouns)",
+    "Everyone guesses privately",
+    "Reveal all at once"]}
+};
+
+/* ============================= 3D DICE ENGINE ============================= */
+/* Real WebGL cubes (Three.js): each die's 6 real faces are baked onto canvas
+   textures and mapped onto a rounded cube. The rolled result always sits on
+   the face pointed straight at the camera, so the mesh can simply spin down
+   to a fixed rest orientation and still show the result flat and readable —
+   no physics engine needed. */
+
+function roundRectPath(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+function wrapCanvasText(ctx, text, cx, cy, maxWidth, lineHeight) {
+  const words = text.split(' ');
+  const lines = [];
+  let line = '';
+  words.forEach(word => {
+    const test = line ? line + ' ' + word : word;
+    if (ctx.measureText(test).width > maxWidth && line) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = test;
+    }
+  });
+  if (line) lines.push(line);
+  const startY = cy - (lines.length - 1) * lineHeight / 2;
+  lines.forEach((l, i) => ctx.fillText(l, cx, startY + i * lineHeight));
+}
+
+function makeFaceTexture(glyph, label, purple) {
+  const size = 256;
+  const canvas = document.createElement('canvas');
+  canvas.width = size; canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  const grad = ctx.createLinearGradient(0, 0, size, size);
+  if (purple) { grad.addColorStop(0, '#1c1c1c'); grad.addColorStop(1, '#333333'); }
+  else { grad.addColorStop(0, '#ffffff'); grad.addColorStop(1, '#f5f5f5'); }
+  ctx.fillStyle = grad;
+  roundRectPath(ctx, 6, 6, size - 12, size - 12, 30);
+  ctx.fill();
+  ctx.lineWidth = 5;
+  ctx.strokeStyle = purple ? 'rgba(224,165,39,0.4)' : 'rgba(120,120,120,0.18)';
+  roundRectPath(ctx, 6, 6, size - 12, size - 12, 30);
+  ctx.stroke();
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = '92px "Segoe UI Emoji","Noto Color Emoji",sans-serif';
+  ctx.fillText(glyph, size / 2, size * 0.4);
+  ctx.font = "700 25px 'Nunito', sans-serif";
+  ctx.fillStyle = purple ? '#ffffff' : '#3a2c1a';
+  wrapCanvasText(ctx, label, size / 2, size * 0.75, size - 44, 28);
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.needsUpdate = true;
+  return tex;
+}
+
+function buildDieMesh(faces, frontFace, getGlyph, purple) {
+  const others = faces.filter(f => f !== frontFace);
+  const slots = new Array(6);
+  slots[4] = frontFace; // +z = the face pointed at the camera = the rolled result
+  const order = [0, 1, 2, 3, 5];
+  order.forEach((slot, i) => { slots[slot] = others[i] !== undefined ? others[i] : frontFace; });
+  const materials = slots.map(f => new THREE.MeshPhysicalMaterial({
+    map: makeFaceTexture(getGlyph(f), f, purple),
+    roughness: 0.35,
+    metalness: 0.05,
+    clearcoat: 0.55,
+    clearcoatRoughness: 0.25
+  }));
+  const geo = new RoundedBoxGeometry(1.5, 1.5, 1.5, 4, 0.2);
+  return new THREE.Mesh(geo, materials);
+}
+
+function newAnim() {
+  const sign = () => (Math.random() < 0.5 ? 1 : -1);
+  // Each axis must land on a *whole* number of full turns (2π × integer) so
+  // that at t=1 the cube's rotation matrix is back to identity — the result
+  // face ends up dead flat and square to the camera, never resting at a
+  // tilt where the winning side is hard to read.
+  const turns = () => (2 + Math.floor(Math.random() * 3)) * Math.PI * 2 * sign();
+  return {
+    start: performance.now(),
+    duration: 850 + Math.random() * 300,
+    rx: turns(),
+    ry: turns(),
+    rz: turns(),
+    hop: 0.1 + Math.random() * 0.08
+  };
+}
+function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+
+function createDieScene(container, faces, frontFace, getGlyph, purple) {
+  const w = container.clientWidth || 180, h = container.clientHeight || 168;
+  const scene = new THREE.Scene();
+  // FOV/distance are tuned as tight as possible around the die's full
+  // tumbling+hopping reach (bounding-sphere corner ~1.3 units, plus the
+  // small hop) so the cube fills as much of its cell as it can without
+  // clipping mid-roll or at rest.
+  const camera = new THREE.PerspectiveCamera(48, w / h, 0.1, 10);
+  camera.position.set(0, 0.85, 3.55);
+  camera.lookAt(0, 0, 0);
+  scene.add(new THREE.AmbientLight(0xffffff, 0.75));
+  const key = new THREE.DirectionalLight(0xffffff, 1.0);
+  key.position.set(-1.6, 2.6, 2);
+  scene.add(key);
+  const fill = new THREE.DirectionalLight(0xffffff, 0.4);
+  fill.position.set(2, 1, -1.6);
+  scene.add(fill);
+
+  const mesh = buildDieMesh(faces, frontFace, getGlyph, purple);
+  scene.add(mesh);
+
+  const shadowCanvas = document.createElement('canvas');
+  shadowCanvas.width = 128; shadowCanvas.height = 128;
+  const sctx = shadowCanvas.getContext('2d');
+  const rg = sctx.createRadialGradient(64, 64, 6, 64, 64, 64);
+  rg.addColorStop(0, 'rgba(40,20,0,0.35)');
+  rg.addColorStop(1, 'rgba(40,20,0,0)');
+  sctx.fillStyle = rg;
+  sctx.fillRect(0, 0, 128, 128);
+  const shadowMesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(2.1, 2.1),
+    new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(shadowCanvas), transparent: true, depthWrite: false })
+  );
+  shadowMesh.rotation.x = -Math.PI / 2;
+  shadowMesh.position.y = -0.77;
+  scene.add(shadowMesh);
+
+  const canvas = document.createElement('canvas');
+  container.appendChild(canvas);
+  const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setSize(w, h, false);
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.15;
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+  return { container, canvas, renderer, scene, camera, mesh, anim: newAnim() };
+}
+
+function disposeMeshDeep(mesh) {
+  if (!mesh) return;
+  mesh.geometry.dispose();
+  const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
+  mats.forEach(m => { if (m.map) m.map.dispose(); m.dispose(); });
+}
+
+function retriggerDie(inst, faces, frontFace, getGlyph, purple) {
+  inst.scene.remove(inst.mesh);
+  disposeMeshDeep(inst.mesh);
+  const mesh = buildDieMesh(faces, frontFace, getGlyph, purple);
+  inst.scene.add(mesh);
+  inst.mesh = mesh;
+  inst.anim = newAnim();
+}
+
+function disposeDie3D(inst) {
+  disposeMeshDeep(inst.mesh);
+  inst.scene.traverse(obj => {
+    if (obj.isMesh && obj !== inst.mesh) {
+      obj.geometry.dispose();
+      if (obj.material.map) obj.material.map.dispose();
+      obj.material.dispose();
+    }
+  });
+  inst.renderer.dispose();
+  // dispose() alone releases GPU buffers but leaves the WebGL context alive
+  // until GC runs; forceContextLoss frees the context slot immediately so
+  // repeated rolls don't exhaust the browser's live-context limit.
+  if (inst.renderer.forceContextLoss) inst.renderer.forceContextLoss();
+  inst.canvas.remove();
+}
+
+const diceInstances = new Map();
+
+function tickAllDice(now) {
+  diceInstances.forEach(inst => {
+    const a = inst.anim;
+    const t = Math.min(1, (now - a.start) / a.duration);
+    const e = easeOutCubic(t);
+    inst.mesh.rotation.set(a.rx * e, a.ry * e, a.rz * e);
+    inst.mesh.position.y = t < 1 ? Math.sin(Math.PI * t) * a.hop : 0;
+    inst.renderer.render(inst.scene, inst.camera);
+  });
+  requestAnimationFrame(tickAllDice);
+}
+requestAnimationFrame(tickAllDice);
+
+function syncDiceSizes() {
+  diceInstances.forEach(inst => {
+    const w = inst.container.clientWidth || 180, h = inst.container.clientHeight || 168;
+    inst.renderer.setSize(w, h, false);
+    inst.camera.aspect = w / h;
+    inst.camera.updateProjectionMatrix();
+  });
+}
+window.addEventListener('resize', syncDiceSizes);
+
+/* ============================= STATE ============================= */
+
+let uidCounter = 1;
+let state = {
+  diceCount: 11,
+  pool: [],
+  setAside: [],
+  mode: "GLEAN",
+  ruleDie: null
+};
+
+/* ============================= HELPERS ============================= */
+
+function pick(arr) { return arr[Math.floor(Math.random()*arr.length)]; }
+function newUid() { return uidCounter++; }
+
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+function playDiceSound(clacks) {
+  let ctx;
+  try { ctx = getAudioCtx(); } catch(e) { return; }
+  const now = ctx.currentTime;
+  const n = clacks || (4 + Math.floor(Math.random()*3));
+  for (let i=0; i<n; i++) {
+    const t = now + i * (0.055 + Math.random()*0.05);
+    const bufferSize = Math.floor(ctx.sampleRate * 0.035);
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let j=0; j<bufferSize; j++) {
+      data[j] = (Math.random()*2-1) * Math.pow(1 - j/bufferSize, 2);
+    }
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = 700 + Math.random()*1500;
+    filter.Q.value = 1.1;
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.55, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.045);
+    noise.connect(filter).connect(gain).connect(ctx.destination);
+    noise.start(t);
+    noise.stop(t + 0.05);
+  }
+}
+
+function playSelectTone(rank) {
+  let ctx;
+  try { ctx = getAudioCtx(); } catch(e) { return; }
+  const now = ctx.currentTime;
+  // Pitch climbs a bit with each die selected in the current turn (rank =
+  // how many dice are now selected), so claiming a bigger set of dice
+  // sounds like it's building toward something.
+  const freq = 520 * Math.pow(2, Math.min(rank - 1, 10) / 12);
+  const osc = ctx.createOscillator();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(freq, now);
+  const osc2 = ctx.createOscillator();
+  osc2.type = 'sine';
+  osc2.frequency.setValueAtTime(freq * 2, now);
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0.0001, now);
+  gain.gain.exponentialRampToValueAtTime(0.3, now + 0.012);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.17);
+  osc.connect(gain);
+  osc2.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start(now); osc.stop(now + 0.18);
+  osc2.start(now); osc2.stop(now + 0.18);
+}
+
+function shuffled(arr) {
+  const copy = arr.slice();
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+function rollPool() {
+  state.pool = [];
+  const n = state.diceCount;
+  const chosenDice = shuffled(CORE_DICE).slice(0, n);
+  chosenDice.forEach(d => {
+    state.pool.push({uid:newUid(), dieName:d.name, face:pick(d.faces), faces:d.faces, sel:false});
+  });
+  state.setAside = [];
+  state.mode = pick(MODE_DIE_FACES);
+  state.ruleDie = {face: state.mode};
+}
+
+function rerollMode() {
+  let newMode = pick(MODE_DIE_FACES);
+  while (newMode === state.mode && MODE_DIE_FACES.length > 1) newMode = pick(MODE_DIE_FACES);
+  state.mode = newMode;
+  state.ruleDie.face = newMode;
+  playDiceSound(2);
+  state.pool.forEach(d => d.sel = false);
+  render();
+}
+
+function toggleSelect(uid) {
+  const d = state.pool.find(x => x.uid === uid);
+  if (!d) return;
+  const singleModes = ["FOCUS","REFLECT"];
+  if (singleModes.includes(state.mode)) {
+    const wasSelected = d.sel;
+    state.pool.forEach(x => x.sel = false);
+    d.sel = !wasSelected;
+  } else {
+    d.sel = !d.sel;
+  }
+  if (d.sel) {
+    const rank = state.pool.filter(x => x.sel).length;
+    playSelectTone(rank);
+  }
+  render();
+}
+
+function setAsideDie(uid) {
+  const idx = state.pool.findIndex(x => x.uid === uid);
+  if (idx === -1) return;
+  const d = state.pool[idx];
+  const reason = window.prompt('Why does "' + d.face + '" not belong in this story? (naming this still counts as a contribution)', '');
+  if (reason === null) return;
+  state.pool.splice(idx, 1);
+  state.setAside.push({face:d.face, reason: reason || "(no reason given)"});
+  render();
+}
+
+function openReference(face) {
+  const ref = FACE_REF[face];
+  if (!ref) return;
+  document.getElementById('refFaceName').textContent = face;
+  document.getElementById('refDieLabel').textContent = "Die: " + ref.die;
+  const versesHtml = ref.verses && ref.verses.length
+    ? '<div class="label">Where it appears</div><div class="content">' + ref.verses.join(' · ') + '</div>'
+    : '';
+  document.getElementById('refVerses').innerHTML = versesHtml;
+  document.getElementById('refMeaning').innerHTML = '<div class="label">May suggest</div><div class="content">' + ref.meaning + '</div>';
+  document.getElementById('refAsk').innerHTML = '<div class="label">Ask</div><div class="content">' + ref.ask + '</div>';
+  document.getElementById('refModal').classList.add('open');
+}
+
+/* ============================= RENDER ============================= */
+
+function render() {
+  renderControls();
+  renderModeBanner();
+  renderPool();
+}
+
+function renderControls() {
+  document.querySelectorAll('#diceAmountDials .dial').forEach(btn => {
+    const val = parseInt(btn.dataset.value, 10);
+    btn.classList.toggle('selected', val === state.diceCount);
+    btn.onclick = () => { state.diceCount = val; renderControls(); };
+  });
+}
+
+function renderModeBanner() {
+  const info = MODE_INFO[state.mode];
+  const st = MODE_STYLE[state.mode];
+  const el = document.getElementById('modeBanner');
+  el.style.background = 'linear-gradient(155deg, ' + st.color + ', ' + st.color + 'cc)';
+  el.innerHTML =
+    '<div class="mode-head"><span class="mode-glyph">' + st.glyph + '</span>' +
+    '<div><h2>' + state.mode + '</h2> <span class="goal">— ' + info.goal + '</span></div></div>' +
+    '<p class="mode-steps">' + info.steps.join(' &nbsp;→&nbsp; ') + '</p>' +
+    '<div class="mode-actions"><button class="secondary small" id="rerollModeBtn">🔁 Reroll Mode</button>' +
+    '<span class="hint-text">the table may override the rolled mode by agreement</span></div>';
+  document.getElementById('rerollModeBtn').onclick = rerollMode;
+}
+
+function renderPool() {
+  const grid = document.getElementById('poolGrid');
+  document.getElementById('poolCount').textContent = state.pool.length + ' standing';
+
+  let emptyMsg = document.getElementById('emptyPoolMsg');
+  if (state.pool.length === 0) {
+    if (!emptyMsg) {
+      emptyMsg = document.createElement('div');
+      emptyMsg.id = 'emptyPoolMsg';
+      emptyMsg.className = 'empty-pool';
+      emptyMsg.style.gridColumn = '1/-1';
+      emptyMsg.textContent = 'No dice standing. Roll to begin a new pool.';
+      grid.appendChild(emptyMsg);
+    }
+  } else if (emptyMsg) {
+    emptyMsg.remove();
+  }
+
+  // Rule die: one persistent 3D instance; only re-tumbles when its face changes.
+  if (state.ruleDie) {
+    const getGlyph = f => MODE_STYLE[f].glyph;
+    let inst = diceInstances.get('rule-die');
+    if (!inst) {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'die-card rule-die';
+      const slot = document.createElement('div');
+      slot.className = 'cube-slot';
+      wrapper.appendChild(slot);
+      const cat = document.createElement('span');
+      cat.className = 'die-cat';
+      cat.textContent = 'Rule Die';
+      wrapper.appendChild(cat);
+      grid.insertBefore(wrapper, grid.firstChild);
+      inst = createDieScene(slot, MODE_DIE_FACES, state.ruleDie.face, getGlyph, true);
+      inst.wrapper = wrapper;
+      inst.currentFace = state.ruleDie.face;
+      diceInstances.set('rule-die', inst);
+    } else if (inst.currentFace !== state.ruleDie.face) {
+      retriggerDie(inst, MODE_DIE_FACES, state.ruleDie.face, getGlyph, true);
+      inst.currentFace = state.ruleDie.face;
+    }
+  }
+
+  // Symbol dice: 3D instances are created once per uid and left alone until
+  // that uid leaves the pool (set aside, or a fresh roll replaces everything).
+  const desiredUids = new Set(state.pool.map(d => d.uid));
+  Array.from(diceInstances.keys()).forEach(key => {
+    if (key === 'rule-die' || desiredUids.has(key)) return;
+    const inst = diceInstances.get(key);
+    disposeDie3D(inst);
+    inst.wrapper.remove();
+    diceInstances.delete(key);
+  });
+
+  state.pool.forEach(d => {
+    let inst = diceInstances.get(d.uid);
+    if (!inst) {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'die-card';
+      const slot = document.createElement('div');
+      slot.className = 'cube-slot';
+      wrapper.appendChild(slot);
+      const cat = document.createElement('span');
+      cat.className = 'die-cat';
+      cat.textContent = d.dieName;
+      wrapper.appendChild(cat);
+      const tools = document.createElement('div');
+      tools.className = 'die-tools';
+      const infoBtn = document.createElement('button');
+      infoBtn.className = 'secondary small';
+      infoBtn.textContent = 'ⓘ';
+      infoBtn.addEventListener('click', (e) => { e.stopPropagation(); openReference(d.face); });
+      const asideBtn = document.createElement('button');
+      asideBtn.className = 'secondary small';
+      asideBtn.textContent = 'aside';
+      asideBtn.addEventListener('click', (e) => { e.stopPropagation(); setAsideDie(d.uid); });
+      tools.appendChild(infoBtn);
+      tools.appendChild(asideBtn);
+      wrapper.appendChild(tools);
+      wrapper.addEventListener('click', (e) => {
+        if (e.target.closest('button')) return;
+        toggleSelect(d.uid);
+      });
+      grid.appendChild(wrapper);
+      const getGlyph = f => EMOJI_MAP[f] || '';
+      inst = createDieScene(slot, d.faces, d.face, getGlyph, false);
+      inst.wrapper = wrapper;
+      diceInstances.set(d.uid, inst);
+    }
+    inst.wrapper.classList.toggle('selected', !!d.sel);
+  });
+
+  const asideEl = document.getElementById('setAsideList');
+  if (state.setAside.length === 0) {
+    asideEl.innerHTML = '';
+  } else {
+    asideEl.innerHTML = '<strong>Set aside this roll:</strong><ul>' +
+      state.setAside.map(a => '<li><em>' + a.face + '</em> — ' + a.reason + '</li>').join('') +
+      '</ul>';
+  }
+
+  // Grid row heights are 1fr and only settle once every card for this roll
+  // is in the DOM, so re-sync renderer/camera sizing now rather than relying
+  // on the window resize handler (which won't fire from internal layout
+  // changes as cards are appended one by one).
+  syncDiceSizes();
+}
+
+/* ============================= EVENTS ============================= */
+
+document.getElementById('rollBtn').addEventListener('click', () => { playDiceSound(); rollPool(); render(); });
+document.querySelectorAll('[data-close]').forEach(btn => {
+  btn.addEventListener('click', () => document.getElementById(btn.dataset.close).classList.remove('open'));
+});
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.classList.remove('open'); });
+});
+
+/* ============================= INIT ============================= */
+
+rollPool();
+render();
+</script>
+</body>
+</html>
