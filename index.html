@@ -405,9 +405,34 @@
       min-height: 420px;
     }
   }
+
+  /* Temporary on-screen diagnostics panel — see the plain <script> right
+     before the module script. Meant to be screenshotted on a device where
+     there's no dev-tools access, then removed once the issue is found. */
+  #debugPanel {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 9999;
+    max-height: 45vh;
+    overflow-y: auto;
+    background: #1a0f02;
+    color: #ffd9a0;
+    font: 12px/1.5 'Consolas', 'Menlo', monospace;
+    padding: 8px 10px;
+    white-space: pre-wrap;
+    word-break: break-word;
+    border-bottom: 3px solid #e0562f;
+  }
+  #debugPanel.open { display: block; }
+  #debugPanel .dbg-line { border-bottom: 1px solid rgba(255,255,255,0.12); padding: 3px 0; }
+  #debugPanel .dbg-err { color: #ff8a8a; font-weight: 700; }
+  #debugPanel .dbg-info { color: #9fd6ff; }
 </style>
 </head>
 <body>
+
+<div id="debugPanel"></div>
 
 <header>
   <h1>Bible Quest Dice</h1>
@@ -450,8 +475,37 @@
   </div>
 </div>
 
+<script>
+// Plain (non-module) script, deliberately placed before the module script so
+// it registers global error handlers first — this way it can still catch and
+// display errors even if the module script itself fails to load or run at
+// all (e.g. an import failing). Meant to be screenshotted on a device with
+// no dev-tools access, then removed once whatever's wrong is found.
+(function() {
+  var panel = document.getElementById('debugPanel');
+  var lines = [];
+  function show(text, cls) {
+    lines.push('<div class="dbg-line' + (cls ? ' ' + cls : '') + '">' + text.replace(/</g, '&lt;') + '</div>');
+    panel.innerHTML = lines.join('');
+    panel.classList.add('open');
+  }
+  window.__dbg = show;
+  window.addEventListener('error', function(e) {
+    show('ERROR: ' + e.message + ' (' + (e.filename || '') + ':' + (e.lineno || '') + ')', 'dbg-err');
+  });
+  window.addEventListener('unhandledrejection', function(e) {
+    show('UNHANDLED PROMISE REJECTION: ' + (e.reason && e.reason.message ? e.reason.message : e.reason), 'dbg-err');
+  });
+  var origError = console.error, origWarn = console.warn;
+  console.error = function() { show('console.error: ' + Array.prototype.slice.call(arguments).join(' '), 'dbg-err'); origError.apply(console, arguments); };
+  console.warn = function() { show('console.warn: ' + Array.prototype.slice.call(arguments).join(' '), 'dbg-err'); origWarn.apply(console, arguments); };
+  show('Diagnostics active. UA: ' + navigator.userAgent, 'dbg-info');
+})();
+</script>
+
 <script type="module">
 import * as THREE from 'three';
+window.__dbg && window.__dbg('THREE imported OK, revision ' + THREE.REVISION, 'dbg-info');
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
 /* ============================= DATA ============================= */
@@ -875,6 +929,7 @@ function detectWebGL() {
   }
 }
 const WEBGL_OK = detectWebGL();
+window.__dbg && window.__dbg('WEBGL_OK = ' + WEBGL_OK, 'dbg-info');
 
 function create2DDieFace(container, face, getGlyph, purple) {
   const canvas = makeFaceCanvas(getGlyph(face), face, purple);
@@ -1405,8 +1460,22 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
 
 /* ============================= INIT ============================= */
 
-rollPool();
-render();
+try {
+  rollPool();
+  render();
+  const canvasCount = document.querySelectorAll('.cube-slot canvas').length;
+  const gridRect = document.getElementById('poolGrid').getBoundingClientRect();
+  window.__dbg && window.__dbg(
+    'Init OK. diceInstances=' + diceInstances.size +
+    ', canvases in DOM=' + canvasCount +
+    ', poolGrid size=' + Math.round(gridRect.width) + 'x' + Math.round(gridRect.height) +
+    ', wrap size=' + Math.round(document.querySelector('.wrap').getBoundingClientRect().width) + 'x' + Math.round(document.querySelector('.wrap').getBoundingClientRect().height),
+    'dbg-info'
+  );
+} catch (e) {
+  window.__dbg && window.__dbg('INIT THREW: ' + e.message + '\n' + (e.stack || ''), 'dbg-err');
+  throw e;
+}
 </script>
 </body>
 </html>
