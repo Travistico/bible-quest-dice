@@ -88,6 +88,13 @@
     flex-direction: column;
     overflow: hidden;
   }
+  /* At 4 or fewer dice the pool is a 2x2 grid (see .grid-corners) — give it
+     most of the card's width by narrowing the sidebar, so those quadrants
+     get meaningfully bigger rather than just filling whatever the 500px
+     sidebar happened to leave over. */
+  .wrap.compact-sidebar .sidebar {
+    flex-basis: 260px;
+  }
 
   .panel {
     background: var(--card);
@@ -1156,9 +1163,12 @@ function renderPool() {
   const grid = document.getElementById('poolGrid');
   document.getElementById('poolCount').textContent = state.pool.length + ' standing';
   // Rule die + symbol dice together; at 4 or fewer, corner them into a 2x2
-  // grid instead of one stretched row (see .grid-corners for why).
+  // grid instead of one stretched row (see .grid-corners for why), and give
+  // that grid most of the card by narrowing the sidebar (see .compact-sidebar).
   const totalDiceShown = state.pool.length + (state.ruleDie ? 1 : 0);
-  grid.classList.toggle('grid-corners', totalDiceShown > 0 && totalDiceShown <= 4);
+  const isCompact = totalDiceShown > 0 && totalDiceShown <= 4;
+  grid.classList.toggle('grid-corners', isCompact);
+  document.querySelector('.wrap').classList.toggle('compact-sidebar', isCompact);
 
   let emptyMsg = document.getElementById('emptyPoolMsg');
   if (state.pool.length === 0) {
