@@ -813,23 +813,22 @@ function newAnim() {
 function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
 
 // The camera's tumble-safe framing, and how much closer the camera moves in
-// for (a) the 2x2 corner layout at <=4 dice, and (b) a die the player has
-// selected. Zooming in during the tumble itself would clip the cube against
-// this same tight frustum, so either zoom only ever applies after rotation
-// has settled flat (see tickAllDice) — the resting silhouette is far
-// smaller than the mid-tumble bounding sphere, leaving plenty of room to
-// move in safely. The tier zoom eases in quickly (a bare landing "settle",
-// not a deliberate animation) while the selection zoom eases more slowly —
-// and the two multiply together, so an already-large selected die zooms in
-// a bit further using the gentler SELECT_EXTRA_FACTOR instead of the full
-// ZOOM_FACTOR, keeping the combined zoom inside the frustum's safe margin.
+// when the player selects a die. Zooming in during the tumble itself would
+// clip the cube against this same tight frustum, so the zoom only ever
+// applies after rotation has settled flat (see tickAllDice) — the resting
+// silhouette is far smaller than the mid-tumble bounding sphere, leaving
+// plenty of room to move in safely.
+//
+// Note: the <=4 dice 2x2 layout (.grid-corners) intentionally has NO
+// matching camera zoom — that was tried and reverted (it produced a
+// distracting automatic enlarge-on-landing that wasn't wanted). Those dice
+// still render bigger than in denser layouts purely because their grid
+// cell is bigger, with no extra camera effect layered on top.
 const BASE_CAM = { x: 0, y: 0.85, z: 3.55 };
-const ZOOM_FACTOR = 0.72; // ~1.39x bigger — tier zoom, and full selection zoom outside the tier
-const SELECT_EXTRA_FACTOR = 0.85; // ~1.18x extra selection zoom for a die that's already in the large tier
-const TIER_ZOOM_MS = 130;
+const ZOOM_FACTOR = 0.72; // ~1.39x bigger, on selection only
 const SELECT_ZOOM_MS = 260;
 
-function createDieScene(container, faces, frontFace, getGlyph, purple, large) {
+function createDieScene(container, faces, frontFace, getGlyph, purple) {
   const w = container.clientWidth || 180, h = container.clientHeight || 168;
   const scene = new THREE.Scene();
   // FOV/distance are tuned as tight as possible around the die's full
@@ -875,7 +874,7 @@ function createDieScene(container, faces, frontFace, getGlyph, purple, large) {
   renderer.toneMappingExposure = 1.15;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
 
-  return { container, canvas, renderer, scene, camera, mesh, anim: newAnim(), large: !!large, selected: false };
+  return { container, canvas, renderer, scene, camera, mesh, anim: newAnim(), selected: false };
 }
 
 function disposeMeshDeep(mesh) {
@@ -922,40 +921,17 @@ function tickAllDice(now) {
     inst.mesh.position.y = t < 1 ? Math.sin(Math.PI * t) * a.hop : 0;
 
     if (t < 1) {
-      // Still tumbling: hold the proven-safe wide framing, and reset BOTH
-      // the target *and* current zoom bookkeeping to match (1 = wide) —
-      // not just the target. The rule die persists across rolls and can
-      // re-tumble while it was already zoomed in from a prior landing; if
-      // "current" were left stale at, say, 0.72, the next landing would
-      // ease "from" that stale value straight back to the same 0.72 — a
-      // same-value no-op that snaps instantly instead of easing, reading
-      // as an unprompted pop rather than a clean settle.
-      inst.tierZoomTarget = undefined;
-      inst.tierZoomCurrent = 1;
+      // Still tumbling: hold the proven-safe wide framing, and reset both
+      // the zoom target *and* current value to match (1 = wide) — not just
+      // the target — so a die that re-tumbles while already zoomed in from
+      // selection doesn't ease "from" a stale value back to that same
+      // value (a same-value no-op that snaps instead of easing).
       inst.selZoomTarget = undefined;
       inst.selZoomCurrent = 1;
       inst.camera.position.set(BASE_CAM.x, BASE_CAM.y, BASE_CAM.z);
     } else {
-      // Flat and frozen — safe to zoom. Tier size (large/normal) eases in
-      // quickly right as it lands — a bare "settle," not a deliberate
-      // animation — and selection eases in more slowly on top of that.
-      // They multiply rather than cap, so a selected die that's already in
-      // the large tier still visibly zooms in a bit further, just against
-      // the gentler SELECT_EXTRA_FACTOR so the combined zoom stays safely
-      // inside the frustum's margin.
-      const tierTarget = inst.large ? ZOOM_FACTOR : 1;
-      if (inst.tierZoomTarget !== tierTarget) {
-        inst.tierZoomFrom = inst.tierZoomCurrent !== undefined ? inst.tierZoomCurrent : 1;
-        inst.tierZoomTarget = tierTarget;
-        inst.tierZoomStart = now;
-      }
-      const tzt = Math.min(1, (now - inst.tierZoomStart) / TIER_ZOOM_MS);
-      const tze = easeOutCubic(tzt);
-      const tierCurrent = inst.tierZoomFrom + (inst.tierZoomTarget - inst.tierZoomFrom) * tze;
-      inst.tierZoomCurrent = tierCurrent;
-
-      const selectedTarget = inst.large ? SELECT_EXTRA_FACTOR : ZOOM_FACTOR;
-      const selTarget = inst.selected ? selectedTarget : 1;
+      // Flat and frozen — safe to zoom. Only selection drives this now.
+      const selTarget = inst.selected ? ZOOM_FACTOR : 1;
       if (inst.selZoomTarget !== selTarget) {
         inst.selZoomFrom = inst.selZoomCurrent !== undefined ? inst.selZoomCurrent : 1;
         inst.selZoomTarget = selTarget;
@@ -966,8 +942,7 @@ function tickAllDice(now) {
       const selCurrent = inst.selZoomFrom + (inst.selZoomTarget - inst.selZoomFrom) * ze;
       inst.selZoomCurrent = selCurrent;
 
-      const factor = tierCurrent * selCurrent;
-      inst.camera.position.set(BASE_CAM.x * factor, BASE_CAM.y * factor, BASE_CAM.z * factor);
+      inst.camera.position.set(BASE_CAM.x * selCurrent, BASE_CAM.y * selCurrent, BASE_CAM.z * selCurrent);
     }
     inst.renderer.render(inst.scene, inst.camera);
   });
@@ -1259,19 +1234,14 @@ function renderPool() {
       wrapper.appendChild(cat);
       grid.insertBefore(wrapper, grid.firstChild);
       attachHoldReroll(wrapper, null, rerollMode);
-      inst = createDieScene(slot, MODE_DIE_FACES, state.ruleDie.face, getGlyph, true, isCompact);
+      inst = createDieScene(slot, MODE_DIE_FACES, state.ruleDie.face, getGlyph, true);
       inst.wrapper = wrapper;
       inst.currentFace = state.ruleDie.face;
       diceInstances.set('rule-die', inst);
-    } else if (inst.currentFace !== state.ruleDie.face || inst.large !== isCompact) {
-      // Also retrigger (a fresh tumble) when only the size tier changed and
-      // the face happens to land the same as before — otherwise the rule
-      // die would silently resize while just sitting there with no roll to
-      // explain it, which reads as a glitch rather than a deliberate change.
+    } else if (inst.currentFace !== state.ruleDie.face) {
       retriggerDie(inst, MODE_DIE_FACES, state.ruleDie.face, getGlyph, true);
       inst.currentFace = state.ruleDie.face;
     }
-    diceInstances.get('rule-die').large = isCompact;
   }
 
   // Symbol dice: 3D instances are created once per uid and left alone until
@@ -1313,11 +1283,10 @@ function renderPool() {
       attachHoldReroll(wrapper, () => toggleSelect(d.uid), () => rerollFace(d.uid));
       grid.appendChild(wrapper);
       const getGlyph = f => EMOJI_MAP[f] || '';
-      inst = createDieScene(slot, d.faces, d.face, getGlyph, false, isCompact);
+      inst = createDieScene(slot, d.faces, d.face, getGlyph, false);
       inst.wrapper = wrapper;
       diceInstances.set(d.uid, inst);
     }
-    inst.large = isCompact;
     inst.selected = !!d.sel;
     inst.wrapper.classList.toggle('selected', !!d.sel);
   });
