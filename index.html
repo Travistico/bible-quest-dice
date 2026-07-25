@@ -319,6 +319,19 @@
     font-size: 0.7em; font-weight: 900;
     display: flex; align-items: center; justify-content: center;
     box-shadow: var(--shadow-sm);
+    z-index: 3; /* above #sharedDiceCanvas (z-index:1) so it isn't ever painted over */
+  }
+  /* One WebGL canvas, shared by every die (see the module script) — each
+     die is drawn into its own on-screen rectangle within it via
+     setScissor/setViewport every frame, instead of each die owning a
+     separate WebGLRenderer/context. Click-through via pointer-events so all
+     the real interaction stays on the actual .die-card elements beneath it. */
+  #sharedDiceCanvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    pointer-events: none;
+    z-index: 1;
   }
   .die-card .die-tools {
     position: absolute;
@@ -878,7 +891,7 @@ function buildDieMesh(faces, frontFace, getGlyph, purple) {
   // simplest shader Three.js can generate. PBR materials (the earlier
   // MeshPhysicalMaterial+clearcoat, then MeshStandardMaterial) were both
   // found to crash shader compilation on at least one real mobile GPU
-  // driver (see detectWebGL's comment). The face art already has its own
+  // driver (see createSharedDiceRenderer's comment). The face art already has its own
   // baked-in gradient/shading drawn into the canvas texture, so this still
   // reads as a lit, dimensional die — just without responsive lighting.
   const materials = slots.map(f => new THREE.MeshBasicMaterial({
@@ -906,47 +919,71 @@ function newAnim() {
 }
 function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
 
-// Some tablets/older devices either have no WebGL at all, or their GPU
-// driver reports shader compile errors in a format Three.js doesn't expect
-// — its own error-log parser then crashes with a null-dereference (a known
-// class of Three.js issue: "Cannot read properties of null (reading
-// 'trim')" inside WebGLProgram's diagnostics, thrown while Three tries to
-// build a helpful message about a shader that failed for some OTHER,
-// driver-specific reason). That crash happens lazily, the first time a
-// material's shader is actually compiled on render — not at construction
-// time — so merely constructing a WebGLRenderer here wouldn't catch it.
-// Instead, build one real throwaway mesh with the exact material used for
-// dice and render it once, so any such crash happens here, inside this
-// try/catch, rather than later during the actual game.
-function detectWebGL() {
+// This app used to give every die its own WebGLRenderer (and thus its own
+// WebGL context) — up to 13 at once at max dice count. Mobile Chrome caps
+// how many *simultaneous* WebGL contexts a page may hold; once exceeded, it
+// silently evicts the OLDEST contexts to make room for new ones. An evicted
+// (lost) context then fails to compile shaders, and on top of that, some
+// mobile GPU drivers report that failure in a log format Three.js's own
+// error-log parser doesn't expect, crashing with a null-dereference (a
+// known class of Three.js bug: "Cannot read properties of null (reading
+// 'trim')" inside WebGLProgram's diagnostics) instead of a normal error.
+// That exactly matches what was observed: the FIRST few dice created (the
+// oldest contexts, evicted first) failing while later ones rendered fine.
+//
+// The real fix is to only ever need ONE WebGL context, period — every die
+// shares this single renderer, drawn into its own on-screen rectangle each
+// frame via setScissor/setViewport (see tickAllDice) rather than each
+// owning a separate context. Shaders still compile lazily on first render
+// rather than at construction, so this smoke-tests that too by rendering
+// one real throwaway die, inside this try/catch, before treating WebGL as
+// usable — if THIS render doesn't crash, none of the real per-die renders
+// sharing the same context/session should either.
+function createSharedDiceRenderer() {
   let renderer;
   try {
     const canvas = document.createElement('canvas');
-    renderer = new THREE.WebGLRenderer({ canvas, failIfMajorPerformanceCaveat: false });
-    if (!renderer.getContext()) return false;
+    canvas.id = 'sharedDiceCanvas';
+    renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, failIfMajorPerformanceCaveat: false });
+    if (!renderer.getContext()) return null;
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(48, 1, 0.1, 10);
     camera.position.z = 3;
-    const mesh = new THREE.Mesh(
-      new RoundedBoxGeometry(1.5, 1.5, 1.5, 4, 0.2),
-      new THREE.MeshBasicMaterial({ map: makeFaceTexture('🎲', 'test', false) })
-    );
+    const geo = new RoundedBoxGeometry(1.5, 1.5, 1.5, 4, 0.2);
+    const mat = new THREE.MeshBasicMaterial({ map: makeFaceTexture('🎲', 'test', false) });
+    const mesh = new THREE.Mesh(geo, mat);
     scene.add(mesh);
     renderer.setSize(64, 64, false);
+    renderer.setViewport(0, 0, 64, 64);
     renderer.render(scene, camera); // shaders compile lazily right here
-    return true;
+    geo.dispose();
+    mat.map.dispose();
+    mat.dispose();
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.15;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.setClearColor(0x000000, 0);
+    renderer.setScissorTest(true);
+    return renderer;
   } catch (e) {
     console.warn('WebGL unusable on this device — using flat 2D die faces instead of 3D cubes:', e);
-    return false;
-  } finally {
     if (renderer) {
       renderer.dispose();
       if (renderer.forceContextLoss) renderer.forceContextLoss();
     }
+    return null;
   }
 }
-const WEBGL_OK = detectWebGL();
+const sharedRenderer = createSharedDiceRenderer();
+const WEBGL_OK = !!sharedRenderer;
 window.__dbg && window.__dbg('WEBGL_OK = ' + WEBGL_OK, 'dbg-info');
+if (sharedRenderer) {
+  document.body.appendChild(sharedRenderer.domElement);
+  const resizeSharedRenderer = () => sharedRenderer.setSize(window.innerWidth, window.innerHeight, false);
+  resizeSharedRenderer();
+  window.addEventListener('resize', resizeSharedRenderer);
+}
 
 function create2DDieFace(container, face, getGlyph, purple) {
   const canvas = makeFaceCanvas(getGlyph(face), face, purple);
@@ -979,22 +1016,18 @@ const ZOOM_FACTOR = 0.72; // ~1.39x bigger, on selection only
 const SELECT_ZOOM_MS = 260;
 
 function createDieScene(container, faces, frontFace, getGlyph, purple) {
-  const w = container.clientWidth || 180, h = container.clientHeight || 168;
   const scene = new THREE.Scene();
   // FOV/distance are tuned as tight as possible around the die's full
   // tumbling+hopping reach (bounding-sphere corner ~1.3 units, plus the
   // small hop) so the cube fills as much of its cell as it can without
-  // clipping mid-roll or at rest.
-  const camera = new THREE.PerspectiveCamera(48, w / h, 0.1, 10);
+  // clipping mid-roll or at rest. Aspect is a placeholder — tickAllDice
+  // recomputes it every frame from container's actual on-screen rect,
+  // since there's no longer a per-die canvas to size once at creation.
+  const camera = new THREE.PerspectiveCamera(48, 1, 0.1, 10);
   camera.position.set(BASE_CAM.x, BASE_CAM.y, BASE_CAM.z);
   camera.lookAt(0, 0, 0);
-  scene.add(new THREE.AmbientLight(0xffffff, 0.75));
-  const key = new THREE.DirectionalLight(0xffffff, 1.0);
-  key.position.set(-1.6, 2.6, 2);
-  scene.add(key);
-  const fill = new THREE.DirectionalLight(0xffffff, 0.4);
-  fill.position.set(2, 1, -1.6);
-  scene.add(fill);
+  // No lights: the die material is MeshBasicMaterial (unlit), so scene
+  // lights would just be inert overhead.
 
   const mesh = buildDieMesh(faces, frontFace, getGlyph, purple);
   scene.add(mesh);
@@ -1015,16 +1048,7 @@ function createDieScene(container, faces, frontFace, getGlyph, purple) {
   shadowMesh.position.y = -0.77;
   scene.add(shadowMesh);
 
-  const canvas = document.createElement('canvas');
-  container.appendChild(canvas);
-  const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-  renderer.setSize(w, h, false);
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.15;
-  renderer.outputColorSpace = THREE.SRGBColorSpace;
-
-  return { container, canvas, renderer, scene, camera, mesh, anim: newAnim(), selected: false };
+  return { container, scene, camera, mesh, anim: newAnim(), selected: false };
 }
 
 function disposeMeshDeep(mesh) {
@@ -1052,17 +1076,22 @@ function disposeDie3D(inst) {
       obj.material.dispose();
     }
   });
-  inst.renderer.dispose();
-  // dispose() alone releases GPU buffers but leaves the WebGL context alive
-  // until GC runs; forceContextLoss frees the context slot immediately so
-  // repeated rolls don't exhaust the browser's live-context limit.
-  if (inst.renderer.forceContextLoss) inst.renderer.forceContextLoss();
-  inst.canvas.remove();
+  // No per-instance renderer/canvas to dispose anymore — every die shares
+  // sharedRenderer/sharedRenderer.domElement, which persists for the whole
+  // session (see createSharedDiceRenderer).
 }
 
 const diceInstances = new Map();
 
 function tickAllDice(now) {
+  if (sharedRenderer) {
+    // Full clear (scissor off) first, since leftover pixels from a die that
+    // moved (scroll) or left the pool would otherwise persist outside
+    // wherever this frame's per-die scissor rects land.
+    sharedRenderer.setScissorTest(false);
+    sharedRenderer.clear();
+    sharedRenderer.setScissorTest(true);
+  }
   diceInstances.forEach(inst => {
     if (inst.is2D) return; // flat fallback faces have no camera/mesh to animate
     const a = inst.anim;
@@ -1095,34 +1124,26 @@ function tickAllDice(now) {
 
       inst.camera.position.set(BASE_CAM.x * selCurrent, BASE_CAM.y * selCurrent, BASE_CAM.z * selCurrent);
     }
-    // Belt-and-suspenders: detectWebGL() already smoke-tests a real render
-    // once up front so this shouldn't normally throw, but this is the rAF
-    // loop — an uncaught exception here would silently kill it forever
-    // (the requestAnimationFrame(tickAllDice) call below would never run
-    // again), taking every die's animation down with it, not just this one.
-    try {
-      inst.renderer.render(inst.scene, inst.camera);
-    } catch (err) {
-      if (!inst.renderFailed) {
-        inst.renderFailed = true;
-        window.__dbg && window.__dbg('Die render failed, this die is now frozen: ' + err.message, 'dbg-err');
-      }
-    }
+
+    // Draw this die into its own on-screen rectangle within the ONE shared
+    // canvas, recomputed fresh every frame (so scrolling/resizing/layout
+    // changes are always reflected with zero extra bookkeeping). Three's
+    // setViewport/setScissor use bottom-left-origin CSS-pixel coordinates,
+    // while getBoundingClientRect is top-left-origin, hence the Y flip.
+    const rect = inst.container.getBoundingClientRect();
+    const w = rect.width, h = rect.height;
+    if (w <= 0 || h <= 0) return; // not laid out / off-screen this frame
+    const x = rect.left;
+    const y = window.innerHeight - rect.bottom;
+    inst.camera.aspect = w / h;
+    inst.camera.updateProjectionMatrix();
+    sharedRenderer.setViewport(x, y, w, h);
+    sharedRenderer.setScissor(x, y, w, h);
+    sharedRenderer.render(inst.scene, inst.camera);
   });
   requestAnimationFrame(tickAllDice);
 }
 requestAnimationFrame(tickAllDice);
-
-function syncDiceSizes() {
-  diceInstances.forEach(inst => {
-    if (inst.is2D) return; // sized by plain CSS, no renderer/camera to resize
-    const w = inst.container.clientWidth || 180, h = inst.container.clientHeight || 168;
-    inst.renderer.setSize(w, h, false);
-    inst.camera.aspect = w / h;
-    inst.camera.updateProjectionMatrix();
-  });
-}
-window.addEventListener('resize', syncDiceSizes);
 
 /* ============================= STATE ============================= */
 
@@ -1470,11 +1491,11 @@ function renderPool() {
       '</ul>';
   }
 
-  // Grid row heights are 1fr and only settle once every card for this roll
-  // is in the DOM, so re-sync renderer/camera sizing now rather than relying
-  // on the window resize handler (which won't fire from internal layout
-  // changes as cards are appended one by one).
-  syncDiceSizes();
+  // No explicit re-sync call needed here anymore: each die's camera aspect
+  // and on-screen viewport/scissor rect are recomputed fresh every single
+  // animation frame in tickAllDice, straight from getBoundingClientRect(),
+  // so newly-appended cards are correctly sized on the very next frame
+  // regardless of exactly when the grid's layout settles.
 }
 
 /* ============================= EVENTS ============================= */
@@ -1492,11 +1513,12 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
 try {
   rollPool();
   render();
-  const canvasCount = document.querySelectorAll('.cube-slot canvas').length;
+  const fallback2DCount = document.querySelectorAll('.cube-slot canvas.face-2d').length;
   const gridRect = document.getElementById('poolGrid').getBoundingClientRect();
   window.__dbg && window.__dbg(
     'Init OK. diceInstances=' + diceInstances.size +
-    ', canvases in DOM=' + canvasCount +
+    ', sharedRenderer=' + (sharedRenderer ? 'yes' : 'no') +
+    ', 2D-fallback faces=' + fallback2DCount +
     ', poolGrid size=' + Math.round(gridRect.width) + 'x' + Math.round(gridRect.height) +
     ', wrap size=' + Math.round(document.querySelector('.wrap').getBoundingClientRect().width) + 'x' + Math.round(document.querySelector('.wrap').getBoundingClientRect().height),
     'dbg-info'
