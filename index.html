@@ -254,6 +254,13 @@
   .die-card.selected .cube-slot {
     box-shadow: 0 0 0 3px var(--claim-border), 0 0 16px rgba(76,175,125,0.45);
   }
+  .die-card.holding .cube-slot {
+    animation: holdCharge 0.55s linear forwards;
+  }
+  @keyframes holdCharge {
+    from { box-shadow: 0 0 0 0 rgba(224,165,39,0); }
+    to { box-shadow: 0 0 0 8px rgba(224,165,39,0.65); }
+  }
   .die-card.rule-die { cursor: default; }
   .die-card.rule-die:hover { transform: none; }
   .die-card.rule-die .die-cat { color: #3a2c1a; font-weight: 800; }
@@ -338,10 +345,11 @@
       <div class="controls-col">
         <span class="dice-amount-label">Choose dice amount</span>
         <div class="dial-row" id="diceAmountDials">
-          <button type="button" class="dial" data-value="5" style="width:38px;height:38px;font-size:0.85em;" aria-label="5 dice">5</button>
-          <button type="button" class="dial" data-value="7" style="width:49px;height:49px;font-size:0.95em;" aria-label="7 dice">7</button>
-          <button type="button" class="dial" data-value="9" style="width:60px;height:60px;font-size:1.05em;" aria-label="9 dice">9</button>
-          <button type="button" class="dial" data-value="11" style="width:71px;height:71px;font-size:1.15em;" aria-label="11 dice">11</button>
+          <button type="button" class="dial" data-value="3" style="width:27px;height:27px;font-size:0.75em;" aria-label="4 dice">4</button>
+          <button type="button" class="dial" data-value="5" style="width:38px;height:38px;font-size:0.85em;" aria-label="6 dice">6</button>
+          <button type="button" class="dial" data-value="7" style="width:49px;height:49px;font-size:0.95em;" aria-label="8 dice">8</button>
+          <button type="button" class="dial" data-value="9" style="width:60px;height:60px;font-size:1.05em;" aria-label="10 dice">10</button>
+          <button type="button" class="dial" data-value="11" style="width:71px;height:71px;font-size:1.15em;" aria-label="12 dice">12</button>
         </div>
         <button id="rollBtn">🎲 Roll</button>
       </div>
@@ -390,12 +398,12 @@ const CORE_DICE = [
   {id:11, name:"Bonds & Covenant", faces:["ark of the covenant","wedding ring","handclasp","broken chain","anchor","cornerstone"]},
   {id:12, name:"Vessels & Instruments", faces:["sword","clay vessel","scroll","garment/robe","net","crown"]}
 ];
-const MODE_DIE_FACES = ["GLEAN","FOCUS","STORY LAW","REFLECT","QUESTION","RIDDLE"];
+const MODE_DIE_FACES = ["GLEAN","FOCUS","LAW","REFLECT","QUESTION","RIDDLE"];
 
 const MODE_STYLE = {
   "GLEAN":     {color:"#3d7a4f", glyph:"⁘"},
   "FOCUS":     {color:"#2f6690", glyph:"◎"},
-  "STORY LAW": {color:"#9c3b3b", glyph:"⌇"},
+  "LAW":       {color:"#9c3b3b", glyph:"⌇"},
   "REFLECT":   {color:"#6b4a8a", glyph:"⇋"},
   "QUESTION":  {color:"#c9701f", glyph:"?"},
   "RIDDLE":    {color:"#1f8a8a", glyph:"⁇"}
@@ -512,7 +520,7 @@ const MODE_INFO = {
     "Choose one die",
     "Say what it brings to mind",
     "Open the floor"]},
-  "STORY LAW": {goal:"Build a story that fulfils a command of God.", steps:[
+  "LAW": {goal:"Build a story that fulfils a command of God.", steps:[
     "Draw a command (d10/Teaching Deck)",
     "Roll & invent a scene",
     "Solo, or relay one die per beat",
@@ -570,6 +578,91 @@ function wrapCanvasText(ctx, text, cx, cy, maxWidth, lineHeight) {
   lines.forEach((l, i) => ctx.fillText(l, cx, startY + i * lineHeight));
 }
 
+// Mode-die icons are hand-drawn vector marks rather than font glyphs — the
+// design calls for abstract geometric marks (never pictorial) so they can
+// never be confused with the 54 pictorial content faces, and drawing them
+// guarantees a crisp result instead of depending on a font's coverage of
+// obscure Unicode symbols.
+function drawTeardrop(ctx, cx, cy, size, dir) {
+  ctx.beginPath();
+  ctx.moveTo(cx, cy + dir * size);
+  ctx.quadraticCurveTo(cx + size * 0.65, cy + dir * size * 0.15, cx, cy - dir * size * 0.05);
+  ctx.quadraticCurveTo(cx - size * 0.65, cy + dir * size * 0.15, cx, cy + dir * size);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawModeIcon(ctx, mode, cx, cy, r) {
+  ctx.save();
+  ctx.strokeStyle = '#eecb7a';
+  ctx.fillStyle = '#eecb7a';
+  ctx.lineWidth = 9;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  if (mode === 'GLEAN') {
+    // Dots gathering into an arc, growing as they converge.
+    const n = 6;
+    for (let i = 0; i < n; i++) {
+      const t = i / (n - 1);
+      const angle = Math.PI * (1.05 - t * 0.85);
+      const x = cx + Math.cos(angle) * r * 0.95;
+      const y = cy + Math.sin(angle) * r * 0.55 + r * 0.2;
+      ctx.beginPath();
+      ctx.arc(x, y, 6 + t * 13, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  } else if (mode === 'FOCUS') {
+    // Concentric rings around a center point.
+    [0.34, 0.62, 0.92].forEach(f => {
+      ctx.beginPath();
+      ctx.arc(cx, cy, r * f, 0, Math.PI * 2);
+      ctx.stroke();
+    });
+    ctx.beginPath();
+    ctx.arc(cx, cy, r * 0.12, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (mode === 'LAW') {
+    // A winding line settling into a fixed horizontal rule.
+    const baseY = cy + r * 0.6;
+    ctx.beginPath();
+    ctx.moveTo(cx - r, baseY);
+    ctx.lineTo(cx + r, baseY);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(cx - r * 0.8, baseY);
+    ctx.bezierCurveTo(cx - r * 0.35, baseY - r * 1.35, cx + r * 0.15, cy - r * 1.05, cx + r * 0.6, baseY - r * 0.1);
+    ctx.stroke();
+  } else if (mode === 'REFLECT') {
+    // A form mirrored across a line, fainter below.
+    ctx.globalAlpha = 0.65;
+    ctx.lineWidth = 6;
+    ctx.beginPath();
+    ctx.moveTo(cx - r, cy);
+    ctx.lineTo(cx + r, cy);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+    drawTeardrop(ctx, cx, cy - r * 0.12, r * 0.6, -1);
+    ctx.globalAlpha = 0.4;
+    drawTeardrop(ctx, cx, cy + r * 0.12, r * 0.6, 1);
+    ctx.globalAlpha = 1;
+  } else if (mode === 'QUESTION') {
+    ctx.font = '700 ' + Math.round(r * 1.9) + 'px "Nunito", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('?', cx, cy + r * 0.05);
+  } else if (mode === 'RIDDLE') {
+    // A mark with a bite taken out of it — partly concealed.
+    ctx.beginPath();
+    ctx.arc(cx, cy, r * 0.72, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.beginPath();
+    ctx.ellipse(cx + r * 0.5, cy + r * 0.42, r * 0.85, r * 0.62, Math.PI / 5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
 function makeFaceTexture(glyph, label, purple) {
   const size = 256;
   const canvas = document.createElement('canvas');
@@ -587,8 +680,12 @@ function makeFaceTexture(glyph, label, purple) {
   ctx.stroke();
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.font = '92px "Segoe UI Emoji","Noto Color Emoji",sans-serif';
-  ctx.fillText(glyph, size / 2, size * 0.4);
+  if (purple) {
+    drawModeIcon(ctx, label, size / 2, size * 0.38, 62);
+  } else {
+    ctx.font = '92px "Segoe UI Emoji","Noto Color Emoji",sans-serif';
+    ctx.fillText(glyph, size / 2, size * 0.4);
+  }
   ctx.font = "700 25px 'Nunito', sans-serif";
   ctx.fillStyle = purple ? '#ffffff' : '#3a2c1a';
   wrapCanvasText(ctx, label, size / 2, size * 0.75, size - 44, 28);
@@ -865,6 +962,51 @@ function toggleSelect(uid) {
   render();
 }
 
+function rerollFace(uid) {
+  const d = state.pool.find(x => x.uid === uid);
+  if (!d) return;
+  const others = d.faces.filter(f => f !== d.face);
+  d.face = others.length ? pick(others) : d.face;
+  d.sel = false;
+  playDiceSound(2);
+  const inst = diceInstances.get(uid);
+  if (inst) {
+    retriggerDie(inst, d.faces, d.face, f => EMOJI_MAP[f] || '', false);
+  }
+  render();
+}
+
+// Press-and-hold gesture shared by every die card: a quick tap fires onTap
+// (select, in the pool grid), holding past HOLD_MS fires onHold (reroll)
+// instead and swallows the tap so a single gesture never does both.
+const HOLD_MS = 550;
+function attachHoldReroll(wrapper, onTap, onHold) {
+  let timer = null;
+  let held = false;
+  function cancel() {
+    if (timer) { clearTimeout(timer); timer = null; }
+    wrapper.classList.remove('holding');
+  }
+  wrapper.addEventListener('pointerdown', (e) => {
+    if (e.target.closest('button') || (e.button !== undefined && e.button !== 0)) return;
+    held = false;
+    wrapper.classList.add('holding');
+    timer = setTimeout(() => {
+      held = true;
+      wrapper.classList.remove('holding');
+      onHold();
+    }, HOLD_MS);
+  });
+  wrapper.addEventListener('pointerup', (e) => {
+    if (e.target.closest('button')) return;
+    cancel();
+    if (!held && onTap) onTap();
+    held = false;
+  });
+  wrapper.addEventListener('pointerleave', cancel);
+  wrapper.addEventListener('pointercancel', cancel);
+}
+
 function setAsideDie(uid) {
   const idx = state.pool.findIndex(x => x.uid === uid);
   if (idx === -1) return;
@@ -953,6 +1095,7 @@ function renderPool() {
       cat.textContent = 'Rule Die';
       wrapper.appendChild(cat);
       grid.insertBefore(wrapper, grid.firstChild);
+      attachHoldReroll(wrapper, null, rerollMode);
       inst = createDieScene(slot, MODE_DIE_FACES, state.ruleDie.face, getGlyph, true);
       inst.wrapper = wrapper;
       inst.currentFace = state.ruleDie.face;
@@ -999,10 +1142,7 @@ function renderPool() {
       tools.appendChild(infoBtn);
       tools.appendChild(asideBtn);
       wrapper.appendChild(tools);
-      wrapper.addEventListener('click', (e) => {
-        if (e.target.closest('button')) return;
-        toggleSelect(d.uid);
-      });
+      attachHoldReroll(wrapper, () => toggleSelect(d.uid), () => rerollFace(d.uid));
       grid.appendChild(wrapper);
       const getGlyph = f => EMOJI_MAP[f] || '';
       inst = createDieScene(slot, d.faces, d.face, getGlyph, false);
