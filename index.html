@@ -376,6 +376,35 @@
   .ref-section .content { font-size: 0.98em; }
 
   .badge { display: inline-block; background: var(--accent); color: #fff; border-radius: 999px; padding: 2px 10px; font-size: 0.68em; font-weight: 800; margin-left: 6px; }
+
+  /* Below this width, the sidebar's fixed 500px basis plus the pool panel's
+     own minimum content no longer both fit in a row — and since .wrap
+     clips overflow rather than scrolling, the pool panel (i.e. every die)
+     was getting squeezed toward zero width and silently clipped off-screen
+     entirely on phones and portrait tablets, while the sidebar (which fits
+     within its own 500px) looked fine. Stack them instead.
+     Placed last in the stylesheet on purpose: these selectors match rules
+     defined earlier (.panel.pool-panel, .sidebar .panel.mode-banner) at
+     equal specificity, so source order is what makes the override win. */
+  @media (max-width: 880px) {
+    .wrap {
+      flex-direction: column;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+    .sidebar {
+      flex: 0 0 auto;
+      width: 100%;
+    }
+    .sidebar .panel.mode-banner {
+      flex: 0 0 auto;
+      max-height: 60vh;
+    }
+    .panel.pool-panel {
+      flex: 1 1 auto;
+      min-height: 420px;
+    }
+  }
 </style>
 </head>
 <body>
