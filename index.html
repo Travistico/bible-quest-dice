@@ -812,7 +812,17 @@ function newAnim() {
 }
 function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
 
-function createDieScene(container, faces, frontFace, getGlyph, purple) {
+// The camera's tumble-safe framing, and how much closer "large" dice (the
+// 2x2 corner layout at <=4 dice) dolly in once fully at rest. Zooming in
+// during the tumble itself would clip the cube against this same tight
+// frustum, so the dolly only ever happens after rotation has settled flat
+// (see tickAllDice) — the resting silhouette is far smaller than the
+// mid-tumble bounding sphere, leaving plenty of room to move in safely.
+const BASE_CAM = { x: 0, y: 0.85, z: 3.55 };
+const LARGE_ZOOM_FACTOR = 0.72; // ~1.39x bigger once settled
+const LARGE_ZOOM_MS = 320;
+
+function createDieScene(container, faces, frontFace, getGlyph, purple, large) {
   const w = container.clientWidth || 180, h = container.clientHeight || 168;
   const scene = new THREE.Scene();
   // FOV/distance are tuned as tight as possible around the die's full
@@ -820,7 +830,7 @@ function createDieScene(container, faces, frontFace, getGlyph, purple) {
   // small hop) so the cube fills as much of its cell as it can without
   // clipping mid-roll or at rest.
   const camera = new THREE.PerspectiveCamera(48, w / h, 0.1, 10);
-  camera.position.set(0, 0.85, 3.55);
+  camera.position.set(BASE_CAM.x, BASE_CAM.y, BASE_CAM.z);
   camera.lookAt(0, 0, 0);
   scene.add(new THREE.AmbientLight(0xffffff, 0.75));
   const key = new THREE.DirectionalLight(0xffffff, 1.0);
@@ -858,7 +868,7 @@ function createDieScene(container, faces, frontFace, getGlyph, purple) {
   renderer.toneMappingExposure = 1.15;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
 
-  return { container, canvas, renderer, scene, camera, mesh, anim: newAnim() };
+  return { container, canvas, renderer, scene, camera, mesh, anim: newAnim(), large: !!large, zoomStart: null };
 }
 
 function disposeMeshDeep(mesh) {
@@ -903,6 +913,23 @@ function tickAllDice(now) {
     const e = easeOutCubic(t);
     inst.mesh.rotation.set(a.rx * e, a.ry * e, a.rz * e);
     inst.mesh.position.y = t < 1 ? Math.sin(Math.PI * t) * a.hop : 0;
+    if (inst.large) {
+      if (t < 1) {
+        // Still tumbling: stay at the proven-safe wide framing. Zooming in
+        // here would clip the cube against the tight frustum mid-roll.
+        inst.zoomStart = null;
+        inst.camera.position.set(BASE_CAM.x, BASE_CAM.y, BASE_CAM.z);
+      } else {
+        // Rotation is flat and frozen now, so it's safe to dolly the camera
+        // in — the resting silhouette can't swing back into the frustum's
+        // tight tumble margin.
+        if (inst.zoomStart === null) inst.zoomStart = now;
+        const zt = Math.min(1, (now - inst.zoomStart) / LARGE_ZOOM_MS);
+        const ze = easeOutCubic(zt);
+        const f = 1 - (1 - LARGE_ZOOM_FACTOR) * ze;
+        inst.camera.position.set(BASE_CAM.x * f, BASE_CAM.y * f, BASE_CAM.z * f);
+      }
+    }
     inst.renderer.render(inst.scene, inst.camera);
   });
   requestAnimationFrame(tickAllDice);
@@ -1193,7 +1220,7 @@ function renderPool() {
       wrapper.appendChild(cat);
       grid.insertBefore(wrapper, grid.firstChild);
       attachHoldReroll(wrapper, null, rerollMode);
-      inst = createDieScene(slot, MODE_DIE_FACES, state.ruleDie.face, getGlyph, true);
+      inst = createDieScene(slot, MODE_DIE_FACES, state.ruleDie.face, getGlyph, true, isCompact);
       inst.wrapper = wrapper;
       inst.currentFace = state.ruleDie.face;
       diceInstances.set('rule-die', inst);
@@ -1201,6 +1228,10 @@ function renderPool() {
       retriggerDie(inst, MODE_DIE_FACES, state.ruleDie.face, getGlyph, true);
       inst.currentFace = state.ruleDie.face;
     }
+    // The rule die persists across rolls (only its face is retriggered), so
+    // its "large" framing needs to track the current layout independently
+    // of whether a retrigger happened this pass.
+    diceInstances.get('rule-die').large = isCompact;
   }
 
   // Symbol dice: 3D instances are created once per uid and left alone until
@@ -1242,10 +1273,11 @@ function renderPool() {
       attachHoldReroll(wrapper, () => toggleSelect(d.uid), () => rerollFace(d.uid));
       grid.appendChild(wrapper);
       const getGlyph = f => EMOJI_MAP[f] || '';
-      inst = createDieScene(slot, d.faces, d.face, getGlyph, false);
+      inst = createDieScene(slot, d.faces, d.face, getGlyph, false, isCompact);
       inst.wrapper = wrapper;
       diceInstances.set(d.uid, inst);
     }
+    inst.large = isCompact;
     inst.wrapper.classList.toggle('selected', !!d.sel);
   });
 
