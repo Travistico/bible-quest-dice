@@ -874,15 +874,15 @@ function buildDieMesh(faces, frontFace, getGlyph, purple) {
   slots[4] = frontFace; // +z = the face pointed at the camera = the rolled result
   const order = [0, 1, 2, 3, 5];
   order.forEach((slot, i) => { slots[slot] = others[i] !== undefined ? others[i] : frontFace; });
-  // MeshStandardMaterial rather than MeshPhysicalMaterial+clearcoat: the
-  // clearcoat shader variant is a common failure point on weaker/older
-  // mobile GPUs (silent shader compile failure → a blank cube, no JS error)
-  // — standard PBR roughness/metalness is far more broadly supported and
-  // looks nearly identical here.
-  const materials = slots.map(f => new THREE.MeshStandardMaterial({
-    map: makeFaceTexture(getGlyph(f), f, purple),
-    roughness: 0.4,
-    metalness: 0.05
+  // MeshBasicMaterial: no lighting model at all, just the texture — the
+  // simplest shader Three.js can generate. PBR materials (the earlier
+  // MeshPhysicalMaterial+clearcoat, then MeshStandardMaterial) were both
+  // found to crash shader compilation on at least one real mobile GPU
+  // driver (see detectWebGL's comment). The face art already has its own
+  // baked-in gradient/shading drawn into the canvas texture, so this still
+  // reads as a lit, dimensional die — just without responsive lighting.
+  const materials = slots.map(f => new THREE.MeshBasicMaterial({
+    map: makeFaceTexture(getGlyph(f), f, purple)
   }));
   const geo = new RoundedBoxGeometry(1.5, 1.5, 1.5, 4, 0.2);
   return new THREE.Mesh(geo, materials);
@@ -906,26 +906,43 @@ function newAnim() {
 }
 function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
 
-// Some tablets/older devices either have no WebGL at all, or have a GPU
-// driver that lets a WebGLRenderer construct successfully but then fails
-// silently later (e.g. a shader compile error logged to the console, no
-// thrown exception) — either way the result looks the same to a player:
-// every other part of the page works, but the dice are just never there.
-// Rather than chase every specific driver quirk blind, detect real WebGL
-// support once up front and fall back to flat 2D face art (reusing the
-// exact same canvas art the 3D cube's textures are baked from) so the game
-// is always playable even where a spinning cube isn't.
+// Some tablets/older devices either have no WebGL at all, or their GPU
+// driver reports shader compile errors in a format Three.js doesn't expect
+// — its own error-log parser then crashes with a null-dereference (a known
+// class of Three.js issue: "Cannot read properties of null (reading
+// 'trim')" inside WebGLProgram's diagnostics, thrown while Three tries to
+// build a helpful message about a shader that failed for some OTHER,
+// driver-specific reason). That crash happens lazily, the first time a
+// material's shader is actually compiled on render — not at construction
+// time — so merely constructing a WebGLRenderer here wouldn't catch it.
+// Instead, build one real throwaway mesh with the exact material used for
+// dice and render it once, so any such crash happens here, inside this
+// try/catch, rather than later during the actual game.
 function detectWebGL() {
+  let renderer;
   try {
     const canvas = document.createElement('canvas');
-    const renderer = new THREE.WebGLRenderer({ canvas, failIfMajorPerformanceCaveat: false });
-    const ok = !!renderer.getContext();
-    renderer.dispose();
-    if (renderer.forceContextLoss) renderer.forceContextLoss();
-    return ok;
+    renderer = new THREE.WebGLRenderer({ canvas, failIfMajorPerformanceCaveat: false });
+    if (!renderer.getContext()) return false;
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(48, 1, 0.1, 10);
+    camera.position.z = 3;
+    const mesh = new THREE.Mesh(
+      new RoundedBoxGeometry(1.5, 1.5, 1.5, 4, 0.2),
+      new THREE.MeshBasicMaterial({ map: makeFaceTexture('🎲', 'test', false) })
+    );
+    scene.add(mesh);
+    renderer.setSize(64, 64, false);
+    renderer.render(scene, camera); // shaders compile lazily right here
+    return true;
   } catch (e) {
-    console.warn('WebGL unavailable — using flat 2D die faces instead of 3D cubes:', e);
+    console.warn('WebGL unusable on this device — using flat 2D die faces instead of 3D cubes:', e);
     return false;
+  } finally {
+    if (renderer) {
+      renderer.dispose();
+      if (renderer.forceContextLoss) renderer.forceContextLoss();
+    }
   }
 }
 const WEBGL_OK = detectWebGL();
@@ -1078,7 +1095,19 @@ function tickAllDice(now) {
 
       inst.camera.position.set(BASE_CAM.x * selCurrent, BASE_CAM.y * selCurrent, BASE_CAM.z * selCurrent);
     }
-    inst.renderer.render(inst.scene, inst.camera);
+    // Belt-and-suspenders: detectWebGL() already smoke-tests a real render
+    // once up front so this shouldn't normally throw, but this is the rAF
+    // loop — an uncaught exception here would silently kill it forever
+    // (the requestAnimationFrame(tickAllDice) call below would never run
+    // again), taking every die's animation down with it, not just this one.
+    try {
+      inst.renderer.render(inst.scene, inst.camera);
+    } catch (err) {
+      if (!inst.renderFailed) {
+        inst.renderFailed = true;
+        window.__dbg && window.__dbg('Die render failed, this die is now frozen: ' + err.message, 'dbg-err');
+      }
+    }
   });
   requestAnimationFrame(tickAllDice);
 }
