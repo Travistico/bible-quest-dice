@@ -812,15 +812,18 @@ function newAnim() {
 }
 function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
 
-// The camera's tumble-safe framing, and how much closer "large" dice (the
-// 2x2 corner layout at <=4 dice) dolly in once fully at rest. Zooming in
-// during the tumble itself would clip the cube against this same tight
-// frustum, so the dolly only ever happens after rotation has settled flat
-// (see tickAllDice) — the resting silhouette is far smaller than the
-// mid-tumble bounding sphere, leaving plenty of room to move in safely.
+// The camera's tumble-safe framing, and how much closer the camera moves in
+// for (a) the 2x2 corner layout at <=4 dice, snapped on instantly once
+// settled, and (b) a die the player has selected, eased in/out smoothly.
+// Zooming in during the tumble itself would clip the cube against this same
+// tight frustum, so either zoom only ever applies after rotation has
+// settled flat (see tickAllDice) — the resting silhouette is far smaller
+// than the mid-tumble bounding sphere, leaving plenty of room to move in
+// safely. The two never multiply together (see Math.min below) since that
+// combined zoom would eat into the resting silhouette's own safe margin.
 const BASE_CAM = { x: 0, y: 0.85, z: 3.55 };
-const LARGE_ZOOM_FACTOR = 0.72; // ~1.39x bigger once settled
-const LARGE_ZOOM_MS = 320;
+const ZOOM_FACTOR = 0.72; // ~1.39x bigger
+const SELECT_ZOOM_MS = 260;
 
 function createDieScene(container, faces, frontFace, getGlyph, purple, large) {
   const w = container.clientWidth || 180, h = container.clientHeight || 168;
@@ -868,7 +871,7 @@ function createDieScene(container, faces, frontFace, getGlyph, purple, large) {
   renderer.toneMappingExposure = 1.15;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
 
-  return { container, canvas, renderer, scene, camera, mesh, anim: newAnim(), large: !!large, zoomStart: null };
+  return { container, canvas, renderer, scene, camera, mesh, anim: newAnim(), large: !!large, selected: false };
 }
 
 function disposeMeshDeep(mesh) {
@@ -913,22 +916,30 @@ function tickAllDice(now) {
     const e = easeOutCubic(t);
     inst.mesh.rotation.set(a.rx * e, a.ry * e, a.rz * e);
     inst.mesh.position.y = t < 1 ? Math.sin(Math.PI * t) * a.hop : 0;
-    if (inst.large) {
-      if (t < 1) {
-        // Still tumbling: stay at the proven-safe wide framing. Zooming in
-        // here would clip the cube against the tight frustum mid-roll.
-        inst.zoomStart = null;
-        inst.camera.position.set(BASE_CAM.x, BASE_CAM.y, BASE_CAM.z);
-      } else {
-        // Rotation is flat and frozen now, so it's safe to dolly the camera
-        // in — the resting silhouette can't swing back into the frustum's
-        // tight tumble margin.
-        if (inst.zoomStart === null) inst.zoomStart = now;
-        const zt = Math.min(1, (now - inst.zoomStart) / LARGE_ZOOM_MS);
-        const ze = easeOutCubic(zt);
-        const f = 1 - (1 - LARGE_ZOOM_FACTOR) * ze;
-        inst.camera.position.set(BASE_CAM.x * f, BASE_CAM.y * f, BASE_CAM.z * f);
+
+    if (t < 1) {
+      // Still tumbling: hold the proven-safe wide framing and clear the
+      // selection-zoom bookkeeping so the next landing eases in clean.
+      inst.selZoomTarget = undefined;
+      inst.camera.position.set(BASE_CAM.x, BASE_CAM.y, BASE_CAM.z);
+    } else {
+      // Flat and frozen — safe to zoom. The dice-count tier (large) snaps
+      // straight to size, no transition; selection eases in/out on top of
+      // it. The two are capped with Math.min rather than multiplied so a
+      // selected die in the large tier can't zoom past the safe margin.
+      const tierFactor = inst.large ? ZOOM_FACTOR : 1;
+      const selTarget = inst.selected ? ZOOM_FACTOR : 1;
+      if (inst.selZoomTarget !== selTarget) {
+        inst.selZoomFrom = inst.selZoomCurrent !== undefined ? inst.selZoomCurrent : 1;
+        inst.selZoomTarget = selTarget;
+        inst.selZoomStart = now;
       }
+      const zt = Math.min(1, (now - inst.selZoomStart) / SELECT_ZOOM_MS);
+      const ze = easeOutCubic(zt);
+      const selCurrent = inst.selZoomFrom + (inst.selZoomTarget - inst.selZoomFrom) * ze;
+      inst.selZoomCurrent = selCurrent;
+      const factor = Math.min(tierFactor, selCurrent);
+      inst.camera.position.set(BASE_CAM.x * factor, BASE_CAM.y * factor, BASE_CAM.z * factor);
     }
     inst.renderer.render(inst.scene, inst.camera);
   });
@@ -1278,6 +1289,7 @@ function renderPool() {
       diceInstances.set(d.uid, inst);
     }
     inst.large = isCompact;
+    inst.selected = !!d.sel;
     inst.wrapper.classList.toggle('selected', !!d.sel);
   });
 
