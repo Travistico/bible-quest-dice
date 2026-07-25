@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bible Quest Dice — Face Reference</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%B2%3C/text%3E%3C/svg%3E">
+<style>
+  :root {
+    --bg-a: #f7dfa6;
+    --bg-b: #eec87a;
+    --paper: #fffaf0;
+    --paper-border: #ecdcb8;
+    --ink: #362a18;
+    --ink-soft: #83725a;
+    --gold: #b4790f;
+    --gold-line: #e0a527;
+    --brown: #7a3c14;
+    --accent: #b5401f;
+    --rule-bg: #221b12;
+    --rule-bg-2: #2e2418;
+    --rule-border: #4a3a22;
+    --rule-ink: #f5e6c8;
+    --rule-ink-soft: #c9b48c;
+    --shadow: 0 1px 2px rgba(54,42,24,0.08), 0 6px 16px rgba(54,42,24,0.08);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg-a: #201a10;
+      --bg-b: #140f09;
+      --paper: #2a2013;
+      --paper-border: #4a3a22;
+      --ink: #f3e6c8;
+      --ink-soft: #c9b48c;
+      --gold: #f0b94a;
+      --gold-line: #e8b545;
+      --brown: #f0b94a;
+      --accent: #ff8a5c;
+      --rule-bg: #0d0b08;
+      --rule-bg-2: #16120c;
+      --rule-border: #3a2f1e;
+      --rule-ink: #f5e6c8;
+      --rule-ink-soft: #b7a279;
+      --shadow: 0 1px 2px rgba(0,0,0,0.4), 0 8px 20px rgba(0,0,0,0.35);
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+    background: linear-gradient(160deg, var(--bg-a), var(--bg-b));
+    background-attachment: fixed;
+    color: var(--ink);
+    padding: 28px 20px 60px;
+  }
+
+  .page { max-width: 1180px; margin: 0 auto; }
+
+  header {
+    max-width: 640px;
+    margin: 0 auto 34px;
+    text-align: center;
+  }
+  .kicker {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+  h1 {
+    font-family: ui-rounded, "SF Pro Rounded", "Segoe UI", system-ui, sans-serif;
+    font-weight: 800;
+    font-size: clamp(1.6rem, 4vw, 2.3rem);
+    margin: 6px 0 10px;
+    color: var(--brown);
+    text-wrap: balance;
+  }
+  header p {
+    margin: 0;
+    color: var(--ink-soft);
+    font-size: 0.98rem;
+    line-height: 1.55;
+  }
+  header p.note {
+    margin-top: 10px;
+    font-size: 0.88rem;
+  }
+  header p.note strong { color: var(--ink); }
+  header a { color: var(--accent); }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+  }
+
+  .die-card {
+    background: var(--paper);
+    border: 1px solid var(--paper-border);
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .die-card .head {
+    padding: 12px 16px 10px;
+    border-bottom: 1px solid var(--paper-border);
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .die-card .head .num {
+    font-variant-numeric: tabular-nums;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--ink-soft);
+    letter-spacing: 0.04em;
+  }
+  .die-card .head h2 {
+    font-family: ui-rounded, "SF Pro Rounded", "Segoe UI", system-ui, sans-serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    margin: 0;
+    color: var(--ink);
+  }
+  .die-card .faces { list-style: none; margin: 0; padding: 6px 8px; }
+  .die-card .faces li {
+    display: grid;
+    grid-template-columns: 30px 1fr;
+    gap: 4px 10px;
+    align-items: start;
+    padding: 7px 8px;
+    border-radius: 9px;
+  }
+  .die-card .faces li:hover { background: rgba(180,121,15,0.08); }
+  .glyph {
+    font-size: 1.25rem;
+    line-height: 1.3;
+    text-align: center;
+  }
+  .face-name {
+    font-weight: 700;
+    font-size: 0.92rem;
+    color: var(--ink);
+    grid-column: 2;
+  }
+  .face-meaning {
+    grid-column: 2;
+    font-size: 0.82rem;
+    line-height: 1.42;
+    color: var(--ink-soft);
+  }
+
+  /* The rule die stands apart deliberately, same as in the game itself:
+     a dark card among light ones, since it's the one die that's always
+     rolled and never a pictorial "content" face. */
+  .rule-card {
+    background: linear-gradient(160deg, var(--rule-bg-2), var(--rule-bg));
+    border: 1px solid var(--rule-border);
+    grid-column: 1 / -1;
+  }
+  .rule-card .head { border-bottom-color: var(--rule-border); }
+  .rule-card .head h2, .rule-card .head .num { color: var(--rule-ink); }
+  .rule-card .faces { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap: 2px 4px; padding: 10px 12px 14px; }
+  .rule-card .faces li:hover { background: rgba(240,185,74,0.08); }
+  .rule-card .face-name { color: var(--rule-ink); }
+  .rule-card .face-meaning { color: var(--rule-ink-soft); }
+  .rule-card .glyph { color: var(--gold-line); font-weight: 700; }
+
+  footer {
+    max-width: 640px;
+    margin: 34px auto 0;
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--ink-soft);
+  }
+  footer a { color: inherit; }
+
+  @media (max-width: 480px) {
+    .grid { grid-template-columns: 1fr; }
+    .rule-card .faces { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <header>
+    <div class="kicker">Bible Quest Dice</div>
+    <h1>Every Die, Every Face</h1>
+    <p>All 12 symbol dice (6 faces each) plus the Rule Die that's always rolled alongside them — the full pool the game draws from.</p>
+    <p class="note"><strong>For review:</strong> read through and just tell Claude what to rename, re-categorize, or rewrite — no need to edit this page directly.</p>
+    <p class="note"><a href="./">&larr; Back to the game</a></p>
+  </header>
+
+  <div class="grid" id="grid"></div>
+
+  <footer>72 symbol faces across 12 dice, plus 6 rule faces on the die that's always in play.</footer>
+</div>
+
+<script>
+const DICE = [
+  { name: "Living Waters", faces: [
+    { glyph: "🌊", name: "water/waves", meaning: "Truth in its most general form — also chaos, the deep." },
+    { glyph: "🍷", name: "wine", meaning: "Truth flowing from good; joy; the new covenant." },
+    { glyph: "🪣", name: "well", meaning: "The source truth is drawn from." },
+    { glyph: "🏞️", name: "river", meaning: "Doctrine flowing; abundance." },
+    { glyph: "🌧️", name: "rain cloud", meaning: "The Word in its outer, literal sense; provision." },
+    { glyph: "🍶", name: "cup", meaning: "Your own reception — what you take in, or must drink." }
+  ]},
+  { name: "Light & Fire", faces: [
+    { glyph: "☀️", name: "sun", meaning: "The Lord; Divine love as the source of all light and warmth." },
+    { glyph: "🔥", name: "flame", meaning: "Love — for good or for destruction." },
+    { glyph: "🪔", name: "oil lamp", meaning: "Truth and faith, kept burning by love (oil)." },
+    { glyph: "⭐", name: "star", meaning: "Truth as guide; a distant faith to be followed." },
+    { glyph: "🌈", name: "rainbow", meaning: "The state of a reborn person; covenant remembered." },
+    { glyph: "⚡", name: "lightning", meaning: "Divine truth striking with power; sudden revelation." }
+  ]},
+  { name: "Bread & Harvest", faces: [
+    { glyph: "🍞", name: "loaves", meaning: "The good of love; sustenance freely given." },
+    { glyph: "🌾", name: "wheat sheaf", meaning: "The church's harvest; truth ready to be gathered." },
+    { glyph: "🍇", name: "grapes on the vine", meaning: "The spiritual church; fruit that must abide to grow." },
+    { glyph: "🫒", name: "olive branch", meaning: "Celestial good; peace after judgment." },
+    { glyph: "🍯", name: "honeycomb", meaning: "The delight of good; sweetness out of hardship." },
+    { glyph: "🧂", name: "salt", meaning: "The longing that binds truth to good; preservation, covenant." }
+  ]},
+  { name: "Flocks & Creatures", faces: [
+    { glyph: "🐑", name: "lamb", meaning: "Innocence; the sacrifice that bears sin." },
+    { glyph: "🕊️", name: "dove", meaning: "The holy; peace; gentleness of spirit." },
+    { glyph: "🦁", name: "lion", meaning: "Truth in power — protective or devouring." },
+    { glyph: "🐍", name: "serpent", meaning: "The sensual; cunning; the lowest natural impulse." },
+    { glyph: "🐟", name: "fish", meaning: "Facts; natural truths; ordinary knowledge multiplied." },
+    { glyph: "🐂", name: "ox", meaning: "Natural good; strength put to steady, humble work." }
+  ]},
+  { name: "Places & States", faces: [
+    { glyph: "⛰️", name: "mountain", meaning: "Love; nearness to the Lord; a place of encounter." },
+    { glyph: "🌿", name: "garden", meaning: "Intelligence, innocence; a cultivated inner state." },
+    { glyph: "🏜️", name: "wilderness", meaning: "Temptation, testing; the dry and formative stretch." },
+    { glyph: "🌻", name: "field", meaning: "The church as to good; a place things are sown and grow." },
+    { glyph: "🏛️", name: "city gate", meaning: "Doctrine; the place judgment and welcome happen." },
+    { glyph: "🛤️", name: "path", meaning: "\"The way\"; truth leading toward good, or away from it." }
+  ]},
+  { name: "Green & Growing", faces: [
+    { glyph: "🌳", name: "tree", meaning: "The whole person; perception, and what a life produces." },
+    { glyph: "🌱", name: "seed", meaning: "Truth sown, waiting on the condition of the soil." },
+    { glyph: "🍐", name: "fig", meaning: "Natural good; the ordinary blessing that can also fail." },
+    { glyph: "🌸", name: "lily", meaning: "Pure trust; beauty that doesn't strive." },
+    { glyph: "🌴", name: "palm branch", meaning: "Victory; the good of truth publicly acknowledged." },
+    { glyph: "🥀", name: "thorns", meaning: "The cares of the world; what chokes good growth." }
+  ]},
+  { name: "People & Callings", faces: [
+    { glyph: "🧑‍🌾", name: "shepherd", meaning: "One who leads toward good; watchful care." },
+    { glyph: "🤴", name: "king", meaning: "Divine truth reigning; rightful or corrupted authority." },
+    { glyph: "🧒", name: "child", meaning: "Innocence; the posture required to receive." },
+    { glyph: "👰", name: "bride", meaning: "The church joined to the Lord; covenant love." },
+    { glyph: "🙇", name: "servant", meaning: "Truth held in willing obedience." },
+    { glyph: "🧓", name: "elder", meaning: "Wisdom; accumulated understanding." }
+  ]},
+  { name: "Holy Things", faces: [
+    { glyph: "🕯️", name: "altar", meaning: "Worship arising from good; the place something is given up." },
+    { glyph: "🗿", name: "tablets of the law", meaning: "Divine truth, covenant, the fixed standard." },
+    { glyph: "🛕", name: "temple", meaning: "Heaven and the Lord's presence; also the reborn person." },
+    { glyph: "💨", name: "incense", meaning: "Grateful worship rising; prayer ascending." },
+    { glyph: "🍞🍷", name: "bread-and-cup", meaning: "Good and truth together; communion, remembrance." },
+    { glyph: "🕎", name: "menorah", meaning: "Divine truth giving light continually." }
+  ]},
+  { name: "Way & Passage", faces: [
+    { glyph: "🚪", name: "door", meaning: "The Lord as the way in; an entrance, or a refusal." },
+    { glyph: "🔑", name: "key", meaning: "The power to open or to bind." },
+    { glyph: "⛵", name: "boat", meaning: "What carries you through; the church that saves." },
+    { glyph: "🪜", name: "ladder", meaning: "Heaven joined to earth." },
+    { glyph: "⚖️", name: "scales", meaning: "Judgment and equity." },
+    { glyph: "🔗", name: "yoke", meaning: "Conjunction and service; what you're bound to and pull with." }
+  ]},
+  { name: "Signs & Wonders", faces: [
+    { glyph: "🔥🌿", name: "burning bush", meaning: "Divine presence within an ordinary thing, unconsumed." },
+    { glyph: "🔥", name: "pillar of fire", meaning: "Guidance and protection made visible by night." },
+    { glyph: "🌊", name: "parted sea", meaning: "A way opened where none should exist; deliverance through the impossible." },
+    { glyph: "🥖", name: "manna", meaning: "Provision that can't be stored or hoarded — given one day at a time." },
+    { glyph: "🪦", name: "empty tomb", meaning: "Death overturned; the reversal no one expected." },
+    { glyph: "🦗", name: "locust swarm", meaning: "Judgment that strips away what was falsely trusted in." }
+  ]},
+  { name: "Bonds & Covenant", faces: [
+    { glyph: "📦", name: "ark of the covenant", meaning: "The Lord's presence carried among His people; where mercy and law meet." },
+    { glyph: "💍", name: "wedding ring", meaning: "A covenant sealed and worn, not just spoken." },
+    { glyph: "🤝", name: "handclasp", meaning: "Agreement sealed in trust between two parties." },
+    { glyph: "⛓️", name: "broken chain", meaning: "Bondage ended; freedom given, not earned." },
+    { glyph: "⚓", name: "anchor", meaning: "Hope that holds even when everything else moves." },
+    { glyph: "🪨", name: "cornerstone", meaning: "The rejected stone everything else ends up built on." }
+  ]},
+  { name: "Vessels & Instruments", faces: [
+    { glyph: "⚔️", name: "sword", meaning: "Divine truth fighting falsity; the Word wielded as a weapon." },
+    { glyph: "🏺", name: "clay vessel", meaning: "The receptacle — ordinary, breakable, chosen anyway to hold something precious." },
+    { glyph: "📜", name: "scroll", meaning: "The Word itself — written, sealed, or opened." },
+    { glyph: "👘", name: "garment/robe", meaning: "Truth clothing good; the outer sign of an inner change." },
+    { glyph: "🕸️", name: "net", meaning: "Teaching that gathers; a wide reach meant to catch many." },
+    { glyph: "👑", name: "crown", meaning: "Wisdom, victory, and reward — or their bitter mockery." }
+  ]}
+];
+
+const RULE_DIE = { name: "Rule Die (always rolled)", faces: [
+  { glyph: "⁘", name: "GLEAN", meaning: "Gather what's usable; leave the rest standing." },
+  { glyph: "◎", name: "FOCUS", meaning: "Depth over breadth, and an opening to learn." },
+  { glyph: "⌇", name: "LAW", meaning: "Build a story that fulfils a command of God." },
+  { glyph: "⇋", name: "REFLECT", meaning: "What scripture says we should be working on." },
+  { glyph: "?", name: "QUESTION", meaning: "Open discussion without needing the answer." },
+  { glyph: "⁇", name: "RIDDLE", meaning: "One clue, one guess, everyone at once." }
+]};
+
+function renderCard(die, index, isRule) {
+  const card = document.createElement('div');
+  card.className = 'die-card' + (isRule ? ' rule-card' : '');
+  const head = document.createElement('div');
+  head.className = 'head';
+  head.innerHTML = '<h2>' + die.name + '</h2>' + (isRule ? '' : '<span class="num">Die ' + index + '</span>');
+  card.appendChild(head);
+  const list = document.createElement('ul');
+  list.className = 'faces';
+  die.faces.forEach(f => {
+    const li = document.createElement('li');
+    li.innerHTML = '<span class="glyph">' + f.glyph + '</span>' +
+      '<span class="face-name">' + f.name + '</span>' +
+      '<span class="face-meaning">' + f.meaning + '</span>';
+    list.appendChild(li);
+  });
+  card.appendChild(list);
+  return card;
+}
+
+const grid = document.getElementById('grid');
+grid.appendChild(renderCard(RULE_DIE, 0, true));
+DICE.forEach((d, i) => grid.appendChild(renderCard(d, i + 1, false)));
+</script>
+</body>
+</html>
