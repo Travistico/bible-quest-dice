@@ -279,7 +279,9 @@
     overflow: visible;
     transition: box-shadow 0.15s ease;
   }
-  .cube-slot canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .cube-slot canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; object-fit: contain; }
+  @keyframes face2DIn { from { opacity: 0; transform: scale(0.92); } to { opacity: 1; transform: scale(1); } }
+  .cube-slot canvas.face-2d { animation: face2DIn 0.2s ease; }
 
   .die-card .die-cat {
     flex-shrink: 0;
@@ -745,7 +747,9 @@ function drawModeIcon(ctx, mode, cx, cy, r) {
   ctx.restore();
 }
 
-function makeFaceTexture(glyph, label, purple) {
+// Shared by both the 3D cube (baked onto a CanvasTexture) and the flat 2D
+// fallback (shown directly as an <img>-like canvas) — see WEBGL_OK below.
+function makeFaceCanvas(glyph, label, purple) {
   const size = 256;
   const canvas = document.createElement('canvas');
   canvas.width = size; canvas.height = size;
@@ -771,7 +775,11 @@ function makeFaceTexture(glyph, label, purple) {
   ctx.font = "700 25px 'Nunito', sans-serif";
   ctx.fillStyle = purple ? '#ffffff' : '#3a2c1a';
   wrapCanvasText(ctx, label, size / 2, size * 0.75, size - 44, 28);
-  const tex = new THREE.CanvasTexture(canvas);
+  return canvas;
+}
+
+function makeFaceTexture(glyph, label, purple) {
+  const tex = new THREE.CanvasTexture(makeFaceCanvas(glyph, label, purple));
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.needsUpdate = true;
   return tex;
@@ -783,12 +791,15 @@ function buildDieMesh(faces, frontFace, getGlyph, purple) {
   slots[4] = frontFace; // +z = the face pointed at the camera = the rolled result
   const order = [0, 1, 2, 3, 5];
   order.forEach((slot, i) => { slots[slot] = others[i] !== undefined ? others[i] : frontFace; });
-  const materials = slots.map(f => new THREE.MeshPhysicalMaterial({
+  // MeshStandardMaterial rather than MeshPhysicalMaterial+clearcoat: the
+  // clearcoat shader variant is a common failure point on weaker/older
+  // mobile GPUs (silent shader compile failure → a blank cube, no JS error)
+  // — standard PBR roughness/metalness is far more broadly supported and
+  // looks nearly identical here.
+  const materials = slots.map(f => new THREE.MeshStandardMaterial({
     map: makeFaceTexture(getGlyph(f), f, purple),
-    roughness: 0.35,
-    metalness: 0.05,
-    clearcoat: 0.55,
-    clearcoatRoughness: 0.25
+    roughness: 0.4,
+    metalness: 0.05
   }));
   const geo = new RoundedBoxGeometry(1.5, 1.5, 1.5, 4, 0.2);
   return new THREE.Mesh(geo, materials);
@@ -811,6 +822,44 @@ function newAnim() {
   };
 }
 function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3); }
+
+// Some tablets/older devices either have no WebGL at all, or have a GPU
+// driver that lets a WebGLRenderer construct successfully but then fails
+// silently later (e.g. a shader compile error logged to the console, no
+// thrown exception) — either way the result looks the same to a player:
+// every other part of the page works, but the dice are just never there.
+// Rather than chase every specific driver quirk blind, detect real WebGL
+// support once up front and fall back to flat 2D face art (reusing the
+// exact same canvas art the 3D cube's textures are baked from) so the game
+// is always playable even where a spinning cube isn't.
+function detectWebGL() {
+  try {
+    const canvas = document.createElement('canvas');
+    const renderer = new THREE.WebGLRenderer({ canvas, failIfMajorPerformanceCaveat: false });
+    const ok = !!renderer.getContext();
+    renderer.dispose();
+    if (renderer.forceContextLoss) renderer.forceContextLoss();
+    return ok;
+  } catch (e) {
+    console.warn('WebGL unavailable — using flat 2D die faces instead of 3D cubes:', e);
+    return false;
+  }
+}
+const WEBGL_OK = detectWebGL();
+
+function create2DDieFace(container, face, getGlyph, purple) {
+  const canvas = makeFaceCanvas(getGlyph(face), face, purple);
+  canvas.className = 'face-2d';
+  container.appendChild(canvas);
+  return { container, canvas, is2D: true, selected: false };
+}
+
+function update2DDieFace(inst, face, getGlyph, purple) {
+  const canvas = makeFaceCanvas(getGlyph(face), face, purple);
+  canvas.className = 'face-2d';
+  inst.container.replaceChild(canvas, inst.canvas);
+  inst.canvas = canvas;
+}
 
 // The camera's tumble-safe framing, and how much closer the camera moves in
 // when the player selects a die. Zooming in during the tumble itself would
@@ -914,6 +963,7 @@ const diceInstances = new Map();
 
 function tickAllDice(now) {
   diceInstances.forEach(inst => {
+    if (inst.is2D) return; // flat fallback faces have no camera/mesh to animate
     const a = inst.anim;
     const t = Math.min(1, (now - a.start) / a.duration);
     const e = easeOutCubic(t);
@@ -952,6 +1002,7 @@ requestAnimationFrame(tickAllDice);
 
 function syncDiceSizes() {
   diceInstances.forEach(inst => {
+    if (inst.is2D) return; // sized by plain CSS, no renderer/camera to resize
     const w = inst.container.clientWidth || 180, h = inst.container.clientHeight || 168;
     inst.renderer.setSize(w, h, false);
     inst.camera.aspect = w / h;
@@ -1094,7 +1145,8 @@ function rerollFace(uid) {
   playDiceSound(2);
   const inst = diceInstances.get(uid);
   if (inst) {
-    retriggerDie(inst, d.faces, d.face, f => EMOJI_MAP[f] || '', false);
+    if (inst.is2D) update2DDieFace(inst, d.face, f => EMOJI_MAP[f] || '', false);
+    else retriggerDie(inst, d.faces, d.face, f => EMOJI_MAP[f] || '', false);
   }
   render();
 }
@@ -1234,12 +1286,15 @@ function renderPool() {
       wrapper.appendChild(cat);
       grid.insertBefore(wrapper, grid.firstChild);
       attachHoldReroll(wrapper, null, rerollMode);
-      inst = createDieScene(slot, MODE_DIE_FACES, state.ruleDie.face, getGlyph, true);
+      inst = WEBGL_OK
+        ? createDieScene(slot, MODE_DIE_FACES, state.ruleDie.face, getGlyph, true)
+        : create2DDieFace(slot, state.ruleDie.face, getGlyph, true);
       inst.wrapper = wrapper;
       inst.currentFace = state.ruleDie.face;
       diceInstances.set('rule-die', inst);
     } else if (inst.currentFace !== state.ruleDie.face) {
-      retriggerDie(inst, MODE_DIE_FACES, state.ruleDie.face, getGlyph, true);
+      if (inst.is2D) update2DDieFace(inst, state.ruleDie.face, getGlyph, true);
+      else retriggerDie(inst, MODE_DIE_FACES, state.ruleDie.face, getGlyph, true);
       inst.currentFace = state.ruleDie.face;
     }
   }
@@ -1250,7 +1305,7 @@ function renderPool() {
   Array.from(diceInstances.keys()).forEach(key => {
     if (key === 'rule-die' || desiredUids.has(key)) return;
     const inst = diceInstances.get(key);
-    disposeDie3D(inst);
+    if (!inst.is2D) disposeDie3D(inst);
     inst.wrapper.remove();
     diceInstances.delete(key);
   });
@@ -1283,7 +1338,9 @@ function renderPool() {
       attachHoldReroll(wrapper, () => toggleSelect(d.uid), () => rerollFace(d.uid));
       grid.appendChild(wrapper);
       const getGlyph = f => EMOJI_MAP[f] || '';
-      inst = createDieScene(slot, d.faces, d.face, getGlyph, false);
+      inst = WEBGL_OK
+        ? createDieScene(slot, d.faces, d.face, getGlyph, false)
+        : create2DDieFace(slot, d.face, getGlyph, false);
       inst.wrapper = wrapper;
       diceInstances.set(d.uid, inst);
     }
