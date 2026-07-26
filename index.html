@@ -588,18 +588,18 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 /* ============================= DATA ============================= */
 
 const CORE_DICE = [
-  {id:1, name:"Water", faces:["sea/deep","well","river","rain","vessel","flood/baptism"]},
+  {id:1, name:"Water", faces:["sea/deep","fountain","river","rain","vessel","gem"]},
   {id:2, name:"Fire & Light", faces:["sun","flame","star","lightning","rainbow","lamp"]},
   {id:3, name:"Bread & Grain", faces:["loaves","wheat","house","salt","seed","seeing"]},
   {id:4, name:"Wine & Blood", faces:["wine","blood","grapevine","honey","olive branch","oil"]},
-  {id:5, name:"Tree & Growth", faces:["tree","garden","wind","palm branch","bramble","child"]},
-  {id:6, name:"Stone & Law", faces:["tablets of the law","cornerstone","scales","key","door","elder"]},
-  {id:7, name:"Creatures", faces:["lamb","dove","lion","serpent","fish","ox"]},
-  {id:8, name:"Mountain & Wilderness", faces:["mountain","wilderness","city gate","path","worker","stranger"]},
+  {id:5, name:"Tree & Growth", faces:["tree","garden","wind","palm branch","thorn","child"]},
+  {id:6, name:"Stone & Law", faces:["heart","cornerstone","scales","key","door","elder"]},
+  {id:7, name:"Creatures", faces:["lamb","dove","lion","serpent","fish","calf"]},
+  {id:8, name:"Mountain & Wilderness", faces:["mountain","wilderness","city","path","worker","stranger"]},
   {id:9, name:"Garment & Vessel", faces:["robe","mirror","boat","servant","bride","crown"]},
-  {id:10, name:"Signs & Reversals", faces:["man","tomb","chain","shield","scroll","sword"]},
-  {id:11, name:"Voice & Word", faces:["trumpet","shout","song","silence","whisper","oath/blessing"]},
-  {id:12, name:"Season & Rhythm", faces:["rest","winter","night","gift","coin","temptation"]}
+  {id:10, name:"Signs & Reversals", faces:["neighbor","death","chain","shield","wonder","sword"]},
+  {id:11, name:"Voice & Word", faces:["trumpet","scroll","song","silence","listen","oath/blessing"]},
+  {id:12, name:"Season & Rhythm", faces:["rest","winter","night","reward","gold","tempter"]}
 ];
 const MODE_DIE_FACES = ["Verse Finder","FOCUS","Story Builder","EXILE","QUESTION","RIDDLE"];
 
@@ -607,7 +607,7 @@ const MODE_STYLE = {
   "Verse Finder":  {color:"#3d7a4f", glyph:"⁘"},
   "FOCUS":         {color:"#2f6690", glyph:"◎"},
   "Story Builder": {color:"#9c3b3b", glyph:"⌇"},
-  "EXILE":         {color:"#6b4a8a", glyph:"🏝️"},
+  "EXILE":         {color:"#6b4a8a", glyph:"🫷"},
   "QUESTION":      {color:"#c9701f", glyph:"?"},
   "RIDDLE":        {color:"#1f8a8a", glyph:"⁇"}
 };
@@ -617,33 +617,33 @@ const MODE_EMOJI = {
   "Verse Finder": "🕵️",
   "FOCUS": "🧐",
   "Story Builder": "👤",
-  "EXILE": "🏝️",
+  "EXILE": "🫷",
   "QUESTION": "❓",
   "RIDDLE": "🤔"
 };
 
 const EMOJI_MAP = {
-  "sea/deep":"🌊", "well":"🪣", "river":"🏞️", "rain":"🌧️", "vessel":"🫙", "flood/baptism":"🚿",
+  "sea/deep":"🌊", "fountain":"⛲", "river":"🏞️", "rain":"🌧️", "vessel":"🫙", "gem":"💎",
   "sun":"☀️", "flame":"🔥", "star":"⭐", "lightning":"⚡", "rainbow":"🌈", "lamp":"🪔",
   "loaves":"🍞", "wheat":"🌾", "house":"🏠", "salt":"🧂", "seed":"🌱", "seeing":"👁️",
   "wine":"🍷", "blood":"🩸", "grapevine":"🍇", "honey":"🍯", "olive branch":"🫒", "oil":"🫗",
-  "tree":"🌳", "garden":"🌿", "wind":"🌬️", "palm branch":"🌴", "bramble":"🌵", "child":"🧒",
-  "tablets of the law":"🪨", "cornerstone":"🧱", "scales":"⚖️", "key":"🔑", "door":"🚪", "elder":"🧓",
-  "lamb":"🐑", "dove":"🕊️", "lion":"🦁", "serpent":"🐍", "fish":"🐟", "ox":"🐂",
-  "mountain":"⛰️", "wilderness":"🏜️", "city gate":"🏛️", "path":"🛤️", "worker":"🧑‍🌾", "stranger":"👤",
+  "tree":"🌳", "garden":"🌿", "wind":"🌬️", "palm branch":"😇", "thorn":"🌵", "child":"🧒",
+  "heart":"💖", "cornerstone":"🧱", "scales":"⚖️", "key":"🔑", "door":"🚪", "elder":"🧓",
+  "lamb":"🐑", "dove":"🕊️", "lion":"🦁", "serpent":"🐍", "fish":"🐟", "calf":"🐄",
+  "mountain":"⛰️", "wilderness":"🏜️", "city":"🏛️", "path":"🛤️", "worker":"🧑‍🌾", "stranger":"👤",
   "robe":"👘", "mirror":"🪞", "boat":"⛵", "servant":"🙇", "bride":"👰", "crown":"👑",
-  "man":"🧔🏽‍♂️", "tomb":"🪦", "chain":"⛓️", "shield":"🛡️", "scroll":"📜", "sword":"⚔️",
-  "trumpet":"📯", "shout":"📢", "song":"🎶", "silence":"🤫", "whisper":"🌬️", "oath/blessing":"🙏",
-  "rest":"🛌", "winter":"❄️", "night":"🌑", "gift":"🎁", "coin":"🪙", "temptation":"😈"
+  "neighbor":"🧔🏽‍♂️", "death":"☠️", "chain":"⛓️", "shield":"🛡️", "wonder":"☄️", "sword":"⚔️",
+  "trumpet":"📯", "scroll":"📜", "song":"🎶", "silence":"🤫", "listen":"👂", "oath/blessing":"🙏",
+  "rest":"🛌", "winter":"❄️", "night":"🌘", "reward":"🎁", "gold":"🪙", "tempter":"😈"
 };
 
 const FACE_REF = {
   "sea/deep": {die:"Water", meaning:"Truth in its most general, unformed state; chaos before order."},
-  "well": {die:"Water", meaning:"The source truth is drawn from."},
+  "fountain": {die:"Water", meaning:"The source truth is drawn from."},
   "river": {die:"Water", meaning:"Doctrine flowing outward; abundance."},
   "rain": {die:"Water", meaning:"The Word in its plain, literal sense; provision."},
   "vessel": {die:"Water", meaning:"What you personally take in, or must drink."},
-  "flood/baptism": {die:"Water", meaning:"Cleansing; a truth that overwhelms the old to make way for the new."},
+  "gem": {die:"Water", meaning:"The pearl of great price; a truth worth selling everything else to have."},
 
   "sun": {die:"Fire & Light", meaning:"The Lord; divine love as source of all warmth and light."},
   "flame": {die:"Fire & Light", meaning:"Love — for good, or turned destructive."},
@@ -670,10 +670,10 @@ const FACE_REF = {
   "garden": {die:"Tree & Growth", meaning:"Innocence; a cultivated inner state."},
   "wind": {die:"Tree & Growth", meaning:"The Spirit's unseen work; growth that comes from a source you can't control or take credit for."},
   "palm branch": {die:"Tree & Growth", meaning:"Victory publicly acknowledged."},
-  "bramble": {die:"Tree & Growth", meaning:"Worldly care that chokes growth."},
+  "thorn": {die:"Tree & Growth", meaning:"Worldly care that chokes growth."},
   "child": {die:"Tree & Growth", meaning:"The posture required to receive; what growth looks like before it's proven."},
 
-  "tablets of the law": {die:"Stone & Law", meaning:"Divine truth as fixed standard."},
+  "heart": {die:"Stone & Law", meaning:"The law written within, not on stone; conviction that comes from inside rather than a command from outside."},
   "cornerstone": {die:"Stone & Law", meaning:"The rejected stone everything else is built on."},
   "scales": {die:"Stone & Law", meaning:"Judgment and equity."},
   "key": {die:"Stone & Law", meaning:"Power to open or to bind."},
@@ -685,11 +685,11 @@ const FACE_REF = {
   "lion": {die:"Creatures", meaning:"Truth in power — protective or devouring."},
   "serpent": {die:"Creatures", meaning:"Cunning; the lowest natural impulse."},
   "fish": {die:"Creatures", meaning:"Natural facts; ordinary knowledge multiplied."},
-  "ox": {die:"Creatures", meaning:"Steady strength put to humble work."},
+  "calf": {die:"Creatures", meaning:"The fatted calf; a father's extravagance killed for a homecoming no one earned."},
 
   "mountain": {die:"Mountain & Wilderness", meaning:"Nearness to the Lord; a place of encounter."},
   "wilderness": {die:"Mountain & Wilderness", meaning:"Testing; the dry, formative stretch."},
-  "city gate": {die:"Mountain & Wilderness", meaning:"Where judgment and welcome happen."},
+  "city": {die:"Mountain & Wilderness", meaning:"Where judgment and welcome happen."},
   "path": {die:"Mountain & Wilderness", meaning:"\"The way\" — toward good, or away from it."},
   "worker": {die:"Mountain & Wilderness", meaning:"Effort spent in formation; labor undertaken in the wilderness stretch, not yet in sight of harvest."},
   "stranger": {die:"Mountain & Wilderness", meaning:"The one without standing, owed welcome anyway."},
@@ -701,26 +701,26 @@ const FACE_REF = {
   "bride": {die:"Garment & Vessel", meaning:"The church joined to the Lord; covenant love."},
   "crown": {die:"Garment & Vessel", meaning:"Wisdom, victory, and reward — or their bitter mockery."},
 
-  "man": {die:"Signs & Reversals", meaning:"A figure met on the road; presence that turns out to carry more than it seemed."},
-  "tomb": {die:"Signs & Reversals", meaning:"Death overturned; the reversal no one expected."},
+  "neighbor": {die:"Signs & Reversals", meaning:"Whoever turns out to be nearest when it matters; the answer to \"who is my neighbor?\""},
+  "death": {die:"Signs & Reversals", meaning:"Death overturned; the reversal no one expected."},
   "chain": {die:"Signs & Reversals", meaning:"Bondage — or bondage broken; what holds, and what can be loosed."},
   "shield": {die:"Signs & Reversals", meaning:"Protection standing between someone and harm; defense offered on another's behalf."},
-  "scroll": {die:"Signs & Reversals", meaning:"The Word — written, sealed, or opened."},
+  "wonder": {die:"Signs & Reversals", meaning:"A dramatic sign in the sky, sent to arrest attention and turn the eyes upward."},
   "sword": {die:"Signs & Reversals", meaning:"Truth fighting falsity; the Word wielded as a weapon."},
 
   "trumpet": {die:"Voice & Word", meaning:"Truth proclaimed aloud; a call to gather, or a warning of what's coming."},
-  "shout": {die:"Voice & Word", meaning:"A truth declared boldly, meant to be heard by everyone."},
+  "scroll": {die:"Voice & Word", meaning:"The Word — written, sealed, or opened."},
   "song": {die:"Voice & Word", meaning:"Praise given form; truth turned into something the heart can carry."},
   "silence": {die:"Voice & Word", meaning:"The pause before revelation; a truth withheld, or judgment not yet spoken."},
-  "whisper": {die:"Voice & Word", meaning:"The still, quiet word — guidance meant for one, easy to miss if you're not listening."},
+  "listen": {die:"Voice & Word", meaning:"The posture of attention; catching what's said for one ear only."},
   "oath/blessing": {die:"Voice & Word", meaning:"A promise spoken and binding; truth that obligates the speaker."},
 
   "rest": {die:"Season & Rhythm", meaning:"Ceasing; trust enacted simply by stopping."},
   "winter": {die:"Season & Rhythm", meaning:"Fallow endurance; faith holding on through the season nothing visibly grows."},
   "night": {die:"Season & Rhythm", meaning:"The dark stretch before the answer comes; the unknown that must be walked through."},
-  "gift": {die:"Season & Rhythm", meaning:"Grace; something given that couldn't be taken or bought."},
-  "coin": {die:"Season & Rhythm", meaning:"Worth entrusted; what's given to someone to put to use, not bury."},
-  "temptation": {die:"Season & Rhythm", meaning:"The pull toward the easy wrong thing, offered right when it looks reasonable."}
+  "reward": {die:"Season & Rhythm", meaning:"What faithful labor is promised; recompense that closes out a season of waiting."},
+  "gold": {die:"Season & Rhythm", meaning:"Worth entrusted; what's given to someone to put to use, not bury."},
+  "tempter": {die:"Season & Rhythm", meaning:"The one who comes when you're weak and hungry, offering an easy shortcut around the wait."}
 };
 
 const MODE_INFO = {

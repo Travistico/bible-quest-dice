@@ -206,11 +206,11 @@
 const DICE = [
   { name: "Water", faces: [
     { glyph: "🌊", name: "sea/deep", meaning: "Truth in its most general, unformed state; chaos before order." },
-    { glyph: "🪣", name: "well", meaning: "The source truth is drawn from." },
+    { glyph: "⛲", name: "fountain", meaning: "The source truth is drawn from." },
     { glyph: "🏞️", name: "river", meaning: "Doctrine flowing outward; abundance." },
     { glyph: "🌧️", name: "rain", meaning: "The Word in its plain, literal sense; provision." },
     { glyph: "🫙", name: "vessel", meaning: "What you personally take in, or must drink." },
-    { glyph: "🚿", name: "flood/baptism", meaning: "Cleansing; a truth that overwhelms the old to make way for the new." }
+    { glyph: "💎", name: "gem", meaning: "The pearl of great price; a truth worth selling everything else to have." }
   ]},
   { name: "Fire & Light", faces: [
     { glyph: "☀️", name: "sun", meaning: "The Lord; divine love as source of all warmth and light." },
@@ -240,12 +240,12 @@ const DICE = [
     { glyph: "🌳", name: "tree", meaning: "The whole person; what a life produces." },
     { glyph: "🌿", name: "garden", meaning: "Innocence; a cultivated inner state." },
     { glyph: "🌬️", name: "wind", meaning: "The Spirit's unseen work; growth that comes from a source you can't control or take credit for." },
-    { glyph: "🌴", name: "palm branch", meaning: "Victory publicly acknowledged." },
-    { glyph: "🌵", name: "bramble", meaning: "Worldly care that chokes growth." },
+    { glyph: "😇", name: "palm branch", meaning: "Victory publicly acknowledged." },
+    { glyph: "🌵", name: "thorn", meaning: "Worldly care that chokes growth." },
     { glyph: "🧒", name: "child", meaning: "The posture required to receive; what growth looks like before it's proven." }
   ]},
   { name: "Stone & Law", faces: [
-    { glyph: "🪨", name: "tablets of the law", meaning: "Divine truth as fixed standard." },
+    { glyph: "💖", name: "heart", meaning: "The law written within, not on stone; conviction that comes from inside rather than a command from outside." },
     { glyph: "🧱", name: "cornerstone", meaning: "The rejected stone everything else is built on." },
     { glyph: "⚖️", name: "scales", meaning: "Judgment and equity." },
     { glyph: "🔑", name: "key", meaning: "Power to open or to bind." },
@@ -258,12 +258,12 @@ const DICE = [
     { glyph: "🦁", name: "lion", meaning: "Truth in power — protective or devouring." },
     { glyph: "🐍", name: "serpent", meaning: "Cunning; the lowest natural impulse." },
     { glyph: "🐟", name: "fish", meaning: "Natural facts; ordinary knowledge multiplied." },
-    { glyph: "🐂", name: "ox", meaning: "Steady strength put to humble work." }
+    { glyph: "🐄", name: "calf", meaning: "The fatted calf; a father's extravagance killed for a homecoming no one earned." }
   ]},
   { name: "Mountain & Wilderness", faces: [
     { glyph: "⛰️", name: "mountain", meaning: "Nearness to the Lord; a place of encounter." },
     { glyph: "🏜️", name: "wilderness", meaning: "Testing; the dry, formative stretch." },
-    { glyph: "🏛️", name: "city gate", meaning: "Where judgment and welcome happen." },
+    { glyph: "🏛️", name: "city", meaning: "Where judgment and welcome happen." },
     { glyph: "🛤️", name: "path", meaning: "\"The way\" — toward good, or away from it." },
     { glyph: "🧑‍🌾", name: "worker", meaning: "Effort spent in formation; labor undertaken in the wilderness stretch, not yet in sight of harvest." },
     { glyph: "👤", name: "stranger", meaning: "The one without standing, owed welcome anyway." }
@@ -277,28 +277,28 @@ const DICE = [
     { glyph: "👑", name: "crown", meaning: "Wisdom, victory, and reward — or their bitter mockery." }
   ]},
   { name: "Signs & Reversals", faces: [
-    { glyph: "🧔🏽‍♂️", name: "man", meaning: "A figure met on the road; presence that turns out to carry more than it seemed." },
-    { glyph: "🪦", name: "tomb", meaning: "Death overturned; the reversal no one expected." },
+    { glyph: "🧔🏽‍♂️", name: "neighbor", meaning: "Whoever turns out to be nearest when it matters; the answer to \"who is my neighbor?\"" },
+    { glyph: "☠️", name: "death", meaning: "Death overturned; the reversal no one expected." },
     { glyph: "⛓️", name: "chain", meaning: "Bondage — or bondage broken; what holds, and what can be loosed." },
     { glyph: "🛡️", name: "shield", meaning: "Protection standing between someone and harm; defense offered on another's behalf." },
-    { glyph: "📜", name: "scroll", meaning: "The Word — written, sealed, or opened." },
+    { glyph: "☄️", name: "wonder", meaning: "A dramatic sign in the sky, sent to arrest attention and turn the eyes upward." },
     { glyph: "⚔️", name: "sword", meaning: "Truth fighting falsity; the Word wielded as a weapon." }
   ]},
   { name: "Voice & Word", faces: [
     { glyph: "📯", name: "trumpet", meaning: "Truth proclaimed aloud; a call to gather, or a warning of what's coming." },
-    { glyph: "📢", name: "shout", meaning: "A truth declared boldly, meant to be heard by everyone." },
+    { glyph: "📜", name: "scroll", meaning: "The Word — written, sealed, or opened." },
     { glyph: "🎶", name: "song", meaning: "Praise given form; truth turned into something the heart can carry." },
     { glyph: "🤫", name: "silence", meaning: "The pause before revelation; a truth withheld, or judgment not yet spoken." },
-    { glyph: "🌬️", name: "whisper", meaning: "The still, quiet word — guidance meant for one, easy to miss if you're not listening." },
+    { glyph: "👂", name: "listen", meaning: "The posture of attention; catching what's said for one ear only." },
     { glyph: "🙏", name: "oath/blessing", meaning: "A promise spoken and binding; truth that obligates the speaker." }
   ]},
   { name: "Season & Rhythm", faces: [
     { glyph: "🛌", name: "rest", meaning: "Ceasing; trust enacted simply by stopping." },
     { glyph: "❄️", name: "winter", meaning: "Fallow endurance; faith holding on through the season nothing visibly grows." },
-    { glyph: "🌑", name: "night", meaning: "The dark stretch before the answer comes; the unknown that must be walked through." },
-    { glyph: "🎁", name: "gift", meaning: "Grace; something given that couldn't be taken or bought." },
-    { glyph: "🪙", name: "coin", meaning: "Worth entrusted; what's given to someone to put to use, not bury." },
-    { glyph: "😈", name: "temptation", meaning: "The pull toward the easy wrong thing, offered right when it looks reasonable." }
+    { glyph: "🌘", name: "night", meaning: "The dark stretch before the answer comes; the unknown that must be walked through." },
+    { glyph: "🎁", name: "reward", meaning: "What faithful labor is promised; recompense that closes out a season of waiting." },
+    { glyph: "🪙", name: "gold", meaning: "Worth entrusted; what's given to someone to put to use, not bury." },
+    { glyph: "😈", name: "tempter", meaning: "The one who comes when you're weak and hungry, offering an easy shortcut around the wait." }
   ]}
 ];
 
@@ -306,7 +306,7 @@ const RULE_DIE = { name: "Rule Die (always rolled)", faces: [
   { glyph: "🕵️", name: "Verse Finder", meaning: "Gather what's usable; leave the rest standing." },
   { glyph: "🧐", name: "FOCUS", meaning: "Depth over breadth, and an opening to learn." },
   { glyph: "👤", name: "Story Builder", meaning: "Build a story that fulfils a command of God." },
-  { glyph: "🏝️", name: "EXILE", meaning: "Cull the pool down to what belongs, and defend the bond." },
+  { glyph: "🫷", name: "EXILE", meaning: "Cull the pool down to what belongs, and defend the bond." },
   { glyph: "❓", name: "QUESTION", meaning: "Open discussion without needing the answer." },
   { glyph: "🤔", name: "RIDDLE", meaning: "One clue, one guess, everyone at once." }
 ]};
