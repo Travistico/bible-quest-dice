@@ -419,9 +419,10 @@
     }
   }
 
-  /* Temporary on-screen diagnostics panel — see the plain <script> right
-     before the module script. Meant to be screenshotted on a device where
-     there's no dev-tools access, then removed once the issue is found. */
+  /* On-screen diagnostics panel — see the plain <script> right before the
+     module script. Off by default; tap the small bug button (bottom-right)
+     to open it, or load the page with ?debug=1 to have it open itself.
+     Useful for troubleshooting on a device with no dev-tools access. */
   #debugPanel {
     display: none;
     position: fixed;
@@ -432,20 +433,69 @@
     background: #1a0f02;
     color: #ffd9a0;
     font: 12px/1.5 'Consolas', 'Menlo', monospace;
-    padding: 8px 10px;
     white-space: pre-wrap;
     word-break: break-word;
     border-bottom: 3px solid #e0562f;
   }
   #debugPanel.open { display: block; }
+  #debugPanelHead {
+    position: sticky;
+    top: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 10px;
+    background: #241606;
+    border-bottom: 1px solid rgba(255,217,160,0.25);
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+  #debugPanelClose {
+    background: none;
+    border: none;
+    color: #ffd9a0;
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 2px 6px;
+    box-shadow: none;
+  }
+  #debugPanelBody { padding: 8px 10px; }
   #debugPanel .dbg-line { border-bottom: 1px solid rgba(255,255,255,0.12); padding: 3px 0; }
   #debugPanel .dbg-err { color: #ff8a8a; font-weight: 700; }
   #debugPanel .dbg-info { color: #9fd6ff; }
+
+  #debugToggle {
+    position: fixed;
+    bottom: 12px; right: 12px;
+    z-index: 9998;
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: rgba(40,24,4,0.55);
+    color: #ffd9a0;
+    border: 1px solid rgba(255,217,160,0.35);
+    font-size: 15px;
+    line-height: 1;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    opacity: 0.5;
+    box-shadow: none;
+    transition: opacity 0.15s ease, background 0.15s ease;
+  }
+  #debugToggle:hover { opacity: 1; }
+  #debugToggle.has-error { background: rgba(190,45,25,0.85); opacity: 0.95; }
 </style>
 </head>
 <body>
 
-<div id="debugPanel"></div>
+<div id="debugPanel">
+  <div id="debugPanelHead">
+    <span>Diagnostics</span>
+    <button id="debugPanelClose" aria-label="Close diagnostics">×</button>
+  </div>
+  <div id="debugPanelBody"></div>
+</div>
+<button id="debugToggle" aria-label="Toggle diagnostics" title="Diagnostics">🐞</button>
 
 <header>
   <h1>Bible Quest Dice</h1>
@@ -496,11 +546,23 @@
 // no dev-tools access, then removed once whatever's wrong is found.
 (function() {
   var panel = document.getElementById('debugPanel');
+  var body = document.getElementById('debugPanelBody');
+  var toggle = document.getElementById('debugToggle');
+  var closeBtn = document.getElementById('debugPanelClose');
   var lines = [];
+
+  function open() { panel.classList.add('open'); }
+  function close() { panel.classList.remove('open'); }
+  toggle.addEventListener('click', function() { panel.classList.toggle('open'); });
+  closeBtn.addEventListener('click', close);
+
+  // Collected in the background regardless of whether the panel is open, so
+  // opening it later (or loading with ?debug=1) shows the full history —
+  // it just doesn't force itself open and interrupt normal play anymore.
   function show(text, cls) {
     lines.push('<div class="dbg-line' + (cls ? ' ' + cls : '') + '">' + text.replace(/</g, '&lt;') + '</div>');
-    panel.innerHTML = lines.join('');
-    panel.classList.add('open');
+    body.innerHTML = lines.join('');
+    if (cls === 'dbg-err') toggle.classList.add('has-error');
   }
   window.__dbg = show;
   window.addEventListener('error', function(e) {
@@ -513,6 +575,8 @@
   console.error = function() { show('console.error: ' + Array.prototype.slice.call(arguments).join(' '), 'dbg-err'); origError.apply(console, arguments); };
   console.warn = function() { show('console.warn: ' + Array.prototype.slice.call(arguments).join(' '), 'dbg-err'); origWarn.apply(console, arguments); };
   show('Diagnostics active. UA: ' + navigator.userAgent, 'dbg-info');
+
+  if (/[?&]debug=1\b/.test(location.search)) open();
 })();
 </script>
 
