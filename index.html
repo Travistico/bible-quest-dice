@@ -401,11 +401,7 @@
   }
   .modal-box h2 { margin-top: 0; font-family: 'Baloo 2', sans-serif; color: var(--brown-dark); }
   .modal-box .close-x { position: absolute; top: 14px; right: 16px; background: #f3ece0; color: var(--ink-soft); border-radius: 50%; width: 30px; height: 30px; font-size: 1.1em; padding: 0; box-shadow: none; }
-  .ref-section { margin-bottom: 12px; }
-  .ref-section .label { font-size: 0.7em; text-transform: uppercase; letter-spacing: 0.5px; color: var(--accent); font-weight: 800; }
-  .ref-section .content { font-size: 0.98em; }
-
-  /* Whole-die reference list (right-click on any die) */
+  /* Whole-die reference list (hover a die, click its ⓘ) */
   .die-ref-list { display: flex; flex-direction: column; gap: 12px; }
   .die-ref-row { display: grid; grid-template-columns: 32px 1fr; gap: 3px 10px; align-items: start; }
   .die-ref-row .glyph { font-size: 1.35em; line-height: 1.3; text-align: center; }
@@ -551,19 +547,7 @@
 
 </div>
 
-<!-- Reference modal -->
-<div class="modal-overlay" id="refModal">
-  <div class="modal-box">
-    <button class="close-x" data-close="refModal">×</button>
-    <h2 id="refFaceName"></h2>
-    <div id="refDieLabel" style="font-size:0.8em;color:var(--ink-soft);margin-top:-8px;margin-bottom:10px;"></div>
-    <div class="ref-section" id="refVerses"></div>
-    <div class="ref-section" id="refMeaning"></div>
-    <div class="ref-section" id="refAsk"></div>
-  </div>
-</div>
-
-<!-- Whole-die reference modal (right-click any die) -->
+<!-- Whole-die reference modal (hover a die, click its ⓘ) -->
 <div class="modal-overlay" id="dieRefModal">
   <div class="modal-box">
     <button class="close-x" data-close="dieRefModal">×</button>
@@ -1466,24 +1450,8 @@ function setAsideDie(uid) {
   render();
 }
 
-function openReference(face) {
-  const ref = FACE_REF[face];
-  if (!ref) return;
-  document.getElementById('refFaceName').textContent = face;
-  document.getElementById('refDieLabel').textContent = "Die: " + ref.die;
-  const versesHtml = ref.verses && ref.verses.length
-    ? '<div class="label">Where it appears</div><div class="content">' + ref.verses.join(' · ') + '</div>'
-    : '';
-  document.getElementById('refVerses').innerHTML = versesHtml;
-  document.getElementById('refMeaning').innerHTML = '<div class="label">May suggest</div><div class="content">' + ref.meaning + '</div>';
-  document.getElementById('refAsk').innerHTML = ref.ask
-    ? '<div class="label">Ask</div><div class="content">' + ref.ask + '</div>'
-    : '';
-  document.getElementById('refModal').classList.add('open');
-}
-
-// Right-click any die to see all six of its faces at once, not just the one
-// currently rolled — a quick lookup without leaving the table.
+// Hover a die and click its ⓘ to see all six of its faces at once, not just
+// the one currently rolled — a quick lookup without leaving the table.
 function openDieReference(title, faceNames, getGlyph, getMeaning) {
   document.getElementById('dieRefTitle').textContent = title;
   document.getElementById('dieRefList').innerHTML = faceNames.map(f =>
@@ -1571,12 +1539,19 @@ function renderPool() {
       cat.className = 'die-cat';
       cat.textContent = 'Rule Die';
       wrapper.appendChild(cat);
-      grid.insertBefore(wrapper, grid.firstChild);
-      attachHoldReroll(wrapper, null, rerollMode);
-      wrapper.addEventListener('contextmenu', (e) => {
-        e.preventDefault();
+      const ruleTools = document.createElement('div');
+      ruleTools.className = 'die-tools';
+      const ruleInfoBtn = document.createElement('button');
+      ruleInfoBtn.className = 'secondary small';
+      ruleInfoBtn.textContent = 'ⓘ';
+      ruleInfoBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
         openDieReference('Rule Die', MODE_DIE_FACES, f => MODE_EMOJI[f] || '', f => MODE_INFO[f] && MODE_INFO[f].goal);
       });
+      ruleTools.appendChild(ruleInfoBtn);
+      wrapper.appendChild(ruleTools);
+      grid.insertBefore(wrapper, grid.firstChild);
+      attachHoldReroll(wrapper, null, rerollMode);
       inst = WEBGL_OK
         ? createDieScene(slot, MODE_DIE_FACES, state.ruleDie.face, getGlyph, true)
         : create2DDieFace(slot, state.ruleDie.face, getGlyph, true);
@@ -1618,7 +1593,10 @@ function renderPool() {
       const infoBtn = document.createElement('button');
       infoBtn.className = 'secondary small';
       infoBtn.textContent = 'ⓘ';
-      infoBtn.addEventListener('click', (e) => { e.stopPropagation(); openReference(d.face); });
+      infoBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openDieReference(d.dieName, d.faces, f => EMOJI_MAP[f] || '', f => FACE_REF[f] && FACE_REF[f].meaning);
+      });
       const asideBtn = document.createElement('button');
       asideBtn.className = 'secondary small';
       asideBtn.textContent = 'aside';
@@ -1627,10 +1605,6 @@ function renderPool() {
       tools.appendChild(asideBtn);
       wrapper.appendChild(tools);
       attachHoldReroll(wrapper, () => toggleSelect(d.uid), () => rerollFace(d.uid));
-      wrapper.addEventListener('contextmenu', (e) => {
-        e.preventDefault();
-        openDieReference(d.dieName, d.faces, f => EMOJI_MAP[f] || '', f => FACE_REF[f] && FACE_REF[f].meaning);
-      });
       wrapper.addEventListener('dblclick', (e) => {
         if (e.target.closest('button')) return;
         toggleLock(d.uid);
