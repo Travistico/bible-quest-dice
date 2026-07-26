@@ -1601,7 +1601,12 @@ function renderPool() {
       asideBtn.className = 'secondary small';
       asideBtn.textContent = 'aside';
       asideBtn.addEventListener('click', (e) => { e.stopPropagation(); setAsideDie(d.uid); });
+      const lockBtn = document.createElement('button');
+      lockBtn.className = 'secondary small';
+      lockBtn.title = 'Lock this die so Roll leaves it alone';
+      lockBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleLock(d.uid); });
       tools.appendChild(infoBtn);
+      tools.appendChild(lockBtn);
       tools.appendChild(asideBtn);
       wrapper.appendChild(tools);
       attachHoldReroll(wrapper, () => toggleSelect(d.uid), () => rerollFace(d.uid));
@@ -1615,11 +1620,14 @@ function renderPool() {
         ? createDieScene(slot, d.faces, d.face, getGlyph, false)
         : create2DDieFace(slot, d.face, getGlyph, false);
       inst.wrapper = wrapper;
+      inst.lockBtn = lockBtn;
       diceInstances.set(d.uid, inst);
     }
     inst.selected = !!d.sel;
     inst.wrapper.classList.toggle('selected', !!d.sel);
     inst.wrapper.classList.toggle('locked', !!d.locked);
+    inst.lockBtn.textContent = d.locked ? '🔓' : '🔒';
+    inst.lockBtn.title = d.locked ? 'Unlock this die' : 'Lock this die so Roll leaves it alone';
   });
 
   const asideEl = document.getElementById('setAsideList');
