@@ -822,18 +822,32 @@ function wrapCanvasText(ctx, text, cx, cy, maxWidth, lineHeight) {
   lines.forEach((l, i) => ctx.fillText(l, cx, startY + i * lineHeight));
 }
 
-// Mode-die icons are hand-drawn vector marks rather than font glyphs — the
-// design calls for abstract geometric marks (never pictorial) so they can
-// never be confused with the 54 pictorial content faces, and drawing them
+// Mode-die icons are hand-drawn vector figures rather than font glyphs or
+// abstract marks — each of the six rules is embodied by a person whose
+// posture fits its goal (a bent gleaner, a seated disciple, a staff-bearing
+// elder, a figure examining its own reflection, a child reaching up to
+// ask, a veiled figure with part of itself concealed). Drawing them
 // guarantees a crisp result instead of depending on a font's coverage of
 // obscure Unicode symbols.
-function drawTeardrop(ctx, cx, cy, size, dir) {
+function drawPersonBody(ctx, cx, cy, r, opts) {
+  opts = opts || {};
+  const headR = r * (opts.headScale || 0.22);
+  const headCy = cy - r * (opts.headY !== undefined ? opts.headY : 0.55);
+  const shoulderY = headCy + headR * 1.15;
+  const topW = r * (opts.topW || 0.26);
+  const botW = r * (opts.botW || 0.5);
+  const botY = cy + r * (opts.botY !== undefined ? opts.botY : 0.58);
   ctx.beginPath();
-  ctx.moveTo(cx, cy + dir * size);
-  ctx.quadraticCurveTo(cx + size * 0.65, cy + dir * size * 0.15, cx, cy - dir * size * 0.05);
-  ctx.quadraticCurveTo(cx - size * 0.65, cy + dir * size * 0.15, cx, cy + dir * size);
+  ctx.moveTo(cx - topW, shoulderY);
+  ctx.lineTo(cx + topW, shoulderY);
+  ctx.lineTo(cx + botW, botY);
+  ctx.lineTo(cx - botW, botY);
   ctx.closePath();
   ctx.fill();
+  ctx.beginPath();
+  ctx.arc(cx, headCy, headR, 0, Math.PI * 2);
+  ctx.fill();
+  return { headR, headCy, shoulderY, topW, botW, botY };
 }
 
 function drawModeIcon(ctx, mode, cx, cy, r) {
@@ -844,64 +858,71 @@ function drawModeIcon(ctx, mode, cx, cy, r) {
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
   if (mode === 'GLEAN') {
-    // Dots gathering into an arc, growing as they converge.
-    const n = 6;
-    for (let i = 0; i < n; i++) {
-      const t = i / (n - 1);
-      const angle = Math.PI * (1.05 - t * 0.85);
-      const x = cx + Math.cos(angle) * r * 0.95;
-      const y = cy + Math.sin(angle) * r * 0.55 + r * 0.2;
-      ctx.beginPath();
-      ctx.arc(x, y, 6 + t * 13, 0, Math.PI * 2);
-      ctx.fill();
-    }
-  } else if (mode === 'FOCUS') {
-    // Concentric rings around a center point.
-    [0.34, 0.62, 0.92].forEach(f => {
-      ctx.beginPath();
-      ctx.arc(cx, cy, r * f, 0, Math.PI * 2);
-      ctx.stroke();
-    });
+    // A bent figure, gathering low to the ground — a sheaf already at hand.
     ctx.beginPath();
-    ctx.arc(cx, cy, r * 0.12, 0, Math.PI * 2);
+    ctx.moveTo(cx - r * 0.15, cy + r * 0.55);
+    ctx.quadraticCurveTo(cx - r * 0.5, cy + r * 0.15, cx - r * 0.28, cy - r * 0.25);
+    ctx.quadraticCurveTo(cx - r * 0.05, cy - r * 0.55, cx + r * 0.35, cy - r * 0.35);
+    ctx.quadraticCurveTo(cx + r * 0.55, cy - r * 0.1, cx + r * 0.32, cy + r * 0.2);
+    ctx.quadraticCurveTo(cx + r * 0.1, cy + r * 0.5, cx - r * 0.15, cy + r * 0.55);
+    ctx.closePath();
     ctx.fill();
+    ctx.beginPath();
+    ctx.arc(cx + r * 0.4, cy - r * 0.42, r * 0.17, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(cx - r * 0.55, cy + r * 0.55, r * 0.16, r * 0.09, -0.4, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (mode === 'FOCUS') {
+    // A seated, still figure — depth over breadth, nothing extra added.
+    drawPersonBody(ctx, cx, cy, r, { headY: 0.5, botY: 0.5, topW: 0.22, botW: 0.62 });
   } else if (mode === 'LAW') {
-    // A winding line settling into a fixed horizontal rule.
-    const baseY = cy + r * 0.6;
+    // An elder: upright, bearded, leaning on a staff.
+    const p = drawPersonBody(ctx, cx, cy, r, { botY: 0.58 });
     ctx.beginPath();
-    ctx.moveTo(cx - r, baseY);
-    ctx.lineTo(cx + r, baseY);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(cx - r * 0.8, baseY);
-    ctx.bezierCurveTo(cx - r * 0.35, baseY - r * 1.35, cx + r * 0.15, cy - r * 1.05, cx + r * 0.6, baseY - r * 0.1);
-    ctx.stroke();
-  } else if (mode === 'REFLECT') {
-    // A form mirrored across a line, fainter below.
-    ctx.globalAlpha = 0.65;
+    ctx.moveTo(cx - p.headR * 0.5, p.headCy + p.headR * 0.6);
+    ctx.lineTo(cx, p.headCy + p.headR * 1.6);
+    ctx.lineTo(cx + p.headR * 0.5, p.headCy + p.headR * 0.6);
+    ctx.closePath();
+    ctx.fill();
     ctx.lineWidth = 6;
     ctx.beginPath();
-    ctx.moveTo(cx - r, cy);
-    ctx.lineTo(cx + r, cy);
+    ctx.moveTo(cx + p.botW * 0.75, p.shoulderY - p.headR * 0.2);
+    ctx.lineTo(cx + p.botW * 0.9, p.botY + r * 0.1);
+    ctx.stroke();
+  } else if (mode === 'REFLECT') {
+    // A figure examining itself, mirrored fainter below a still waterline.
+    const lineY = cy + r * 0.15;
+    ctx.globalAlpha = 0.55;
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(cx - r * 0.9, lineY);
+    ctx.lineTo(cx + r * 0.9, lineY);
     ctx.stroke();
     ctx.globalAlpha = 1;
-    drawTeardrop(ctx, cx, cy - r * 0.12, r * 0.6, -1);
-    ctx.globalAlpha = 0.4;
-    drawTeardrop(ctx, cx, cy + r * 0.12, r * 0.6, 1);
-    ctx.globalAlpha = 1;
+    const figCy = cy - r * 0.15;
+    const figOpts = { headY: 0.6, botY: 0.3, topW: 0.24, botW: 0.46 };
+    drawPersonBody(ctx, cx, figCy, r * 0.85, figOpts);
+    ctx.save();
+    ctx.globalAlpha = 0.32;
+    ctx.translate(0, 2 * lineY);
+    ctx.scale(1, -1);
+    drawPersonBody(ctx, cx, figCy, r * 0.85, figOpts);
+    ctx.restore();
   } else if (mode === 'QUESTION') {
-    ctx.font = '700 ' + Math.round(r * 1.9) + 'px "Nunito", sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('?', cx, cy + r * 0.05);
-  } else if (mode === 'RIDDLE') {
-    // A mark with a bite taken out of it — partly concealed.
+    // A child, smaller and reaching up to ask.
+    const p = drawPersonBody(ctx, cx, cy, r, { headScale: 0.28, headY: 0.3, botY: 0.55, topW: 0.16, botW: 0.34 });
+    ctx.lineWidth = 8;
     ctx.beginPath();
-    ctx.arc(cx, cy, r * 0.72, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.moveTo(cx + p.topW * 0.9, p.shoulderY);
+    ctx.quadraticCurveTo(cx + r * 0.5, p.headCy + p.headR * 0.6, cx + r * 0.55, p.headCy - r * 0.15);
+    ctx.stroke();
+  } else if (mode === 'RIDDLE') {
+    // A veiled figure, part of it concealed — mystery to be searched out.
+    drawPersonBody(ctx, cx, cy, r, { botY: 0.55 });
     ctx.globalCompositeOperation = 'destination-out';
     ctx.beginPath();
-    ctx.ellipse(cx + r * 0.5, cy + r * 0.42, r * 0.85, r * 0.62, Math.PI / 5, 0, Math.PI * 2);
+    ctx.ellipse(cx + r * 0.32, cy - r * 0.15, r * 0.55, r * 0.75, Math.PI / 6, 0, Math.PI * 2);
     ctx.fill();
   }
   ctx.restore();
