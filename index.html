@@ -612,6 +612,17 @@ const MODE_STYLE = {
   "RIDDLE":    {color:"#1f8a8a", glyph:"⁇"}
 };
 
+// Real emoji for the rule die's face art (see makeFaceCanvas) — REFLECT
+// isn't set yet, so it still falls back to the hand-drawn figure below
+// until there's an emoji picked for it too.
+const MODE_EMOJI = {
+  "GLEAN": "👤",
+  "FOCUS": "🕵️",
+  "LAW": "🧔🏻‍♀️",
+  "QUESTION": "🧒",
+  "RIDDLE": "🤔"
+};
+
 const EMOJI_MAP = {
   "sea/deep":"🌊", "well":"🪣", "river":"🏞️", "rain":"🌧️", "vessel":"🫙", "flood/baptism":"🚿",
   "sun":"☀️", "flame":"🔥", "star":"⭐", "lightning":"⚡", "rainbow":"🌈", "lamp":"🪔",
@@ -947,7 +958,10 @@ function makeFaceCanvas(glyph, label, purple) {
   ctx.stroke();
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  if (purple) {
+  if (purple && MODE_EMOJI[label]) {
+    ctx.font = '92px "Segoe UI Emoji","Noto Color Emoji",sans-serif';
+    ctx.fillText(MODE_EMOJI[label], size / 2, size * 0.4);
+  } else if (purple) {
     drawModeIcon(ctx, label, size / 2, size * 0.38, 62);
   } else {
     ctx.font = '92px "Segoe UI Emoji","Noto Color Emoji",sans-serif';
