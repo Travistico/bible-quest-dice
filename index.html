@@ -323,6 +323,21 @@
     box-shadow: var(--shadow-sm);
     z-index: 3; /* above #sharedDiceCanvas (z-index:1) so it isn't ever painted over */
   }
+  /* Double-click a die to lock it — it survives the next Roll instead of
+     being replaced. Double-click again to release it. */
+  .die-card.locked .cube-slot {
+    box-shadow: 0 0 0 3px var(--gold), 0 0 16px rgba(224,165,39,0.5);
+  }
+  .die-card.locked::before {
+    content: "🔒";
+    position: absolute; top: -6px; left: -2px;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: var(--gold); color: #fff;
+    font-size: 0.6em;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: var(--shadow-sm);
+    z-index: 3;
+  }
   /* One WebGL canvas, shared by every die (see the module script) — each
      die is drawn into its own on-screen rectangle within it via
      setScissor/setViewport every frame, instead of each die owning a
@@ -610,7 +625,7 @@ const CORE_DICE = [
   {id:1, name:"Water", faces:["sea/deep","fountain","fruit","rain","vessel","gem"]},
   {id:2, name:"Fire & Light", faces:["sun","flame","star","lightning","rainbow","lamp"]},
   {id:3, name:"Bread & Grain", faces:["loaves","wheat","house","salt","seed","seeing"]},
-  {id:4, name:"Wine & Blood", faces:["wine","blood","grapevine","honey","olive branch","oil"]},
+  {id:4, name:"Wine & Blood", faces:["wine","blood","grapevine","honey","devil","oil"]},
   {id:5, name:"Tree & Growth", faces:["tree","garden","wind","angel","thorn","child"]},
   {id:6, name:"Stone & Law", faces:["heart","cornerstone","scales","key","door","elder"]},
   {id:7, name:"Creatures", faces:["lamb","dove","lion","serpent","fish","calf"]},
@@ -645,7 +660,7 @@ const EMOJI_MAP = {
   "sea/deep":"🌊", "fountain":"⛲", "fruit":"🍎", "rain":"🌧️", "vessel":"🫙", "gem":"💎",
   "sun":"☀️", "flame":"🔥", "star":"⭐", "lightning":"⚡", "rainbow":"🌈", "lamp":"🪔",
   "loaves":"🍞", "wheat":"🌾", "house":"🏠", "salt":"🧂", "seed":"🌱", "seeing":"👁️",
-  "wine":"🍷", "blood":"🩸", "grapevine":"🍇", "honey":"🍯", "olive branch":"🫒", "oil":"🫗",
+  "wine":"🍷", "blood":"🩸", "grapevine":"🍇", "honey":"🍯", "devil":"👹", "oil":"🫗",
   "tree":"🌳", "garden":"🌿", "wind":"💨", "angel":"😇", "thorn":"🌵", "child":"🧒",
   "heart":"💖", "cornerstone":"🧱", "scales":"⚖️", "key":"🔑", "door":"🚪", "elder":"🧓",
   "lamb":"🐑", "dove":"🕊️", "lion":"🦁", "serpent":"🐍", "fish":"🐟", "calf":"🐄",
@@ -682,7 +697,7 @@ const FACE_REF = {
   "blood": {die:"Wine & Blood", meaning:"Life poured out; atonement; the cost that seals a covenant."},
   "grapevine": {die:"Wine & Blood", meaning:"The spiritual church; fruit that must abide to grow."},
   "honey": {die:"Wine & Blood", meaning:"Abundance freely given; the sweetness on the far side of the wilderness."},
-  "olive branch": {die:"Wine & Blood", meaning:"Peace after judgment."},
+  "devil": {die:"Wine & Blood", meaning:"\"One of you is a devil\" — proximity to the table is no guarantee of the heart."},
   "oil": {die:"Wine & Blood", meaning:"Consecration; blessing poured out, not earned."},
 
   "tree": {die:"Tree & Growth", meaning:"The whole person; what a life produces."},
@@ -1346,15 +1361,24 @@ function shuffled(arr) {
 }
 
 function rollPool() {
-  state.pool = [];
-  const n = state.diceCount;
-  const chosenDice = shuffled(CORE_DICE).slice(0, n);
-  chosenDice.forEach(d => {
-    state.pool.push({uid:newUid(), dieName:d.name, face:pick(d.faces), faces:d.faces, sel:false});
-  });
+  // Locked dice ride through a fresh roll untouched — their die category is
+  // also excluded from the draw so the same die never appears twice.
+  const locked = state.pool.filter(d => d.locked).map(d => ({...d, sel:false}));
+  const lockedNames = new Set(locked.map(d => d.dieName));
+  const n = Math.max(0, state.diceCount - locked.length);
+  const chosenDice = shuffled(CORE_DICE.filter(d => !lockedNames.has(d.name))).slice(0, n);
+  const rolled = chosenDice.map(d => ({uid:newUid(), dieName:d.name, face:pick(d.faces), faces:d.faces, sel:false, locked:false}));
+  state.pool = [...locked, ...rolled];
   state.setAside = [];
   state.mode = pick(MODE_DIE_FACES);
   state.ruleDie = {face: state.mode};
+}
+
+function toggleLock(uid) {
+  const d = state.pool.find(x => x.uid === uid);
+  if (!d) return;
+  d.locked = !d.locked;
+  render();
 }
 
 function rerollMode() {
@@ -1607,6 +1631,10 @@ function renderPool() {
         e.preventDefault();
         openDieReference(d.dieName, d.faces, f => EMOJI_MAP[f] || '', f => FACE_REF[f] && FACE_REF[f].meaning);
       });
+      wrapper.addEventListener('dblclick', (e) => {
+        if (e.target.closest('button')) return;
+        toggleLock(d.uid);
+      });
       grid.appendChild(wrapper);
       const getGlyph = f => EMOJI_MAP[f] || '';
       inst = WEBGL_OK
@@ -1617,6 +1645,7 @@ function renderPool() {
     }
     inst.selected = !!d.sel;
     inst.wrapper.classList.toggle('selected', !!d.sel);
+    inst.wrapper.classList.toggle('locked', !!d.locked);
   });
 
   const asideEl = document.getElementById('setAsideList');
