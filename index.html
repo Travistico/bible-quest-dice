@@ -1354,14 +1354,21 @@ function rollPool() {
   const rolled = chosenDice.map(d => ({uid:newUid(), dieName:d.name, face:pick(d.faces), faces:d.faces, sel:false, locked:false}));
   state.pool = [...locked, ...rolled];
   state.setAside = [];
-  state.mode = pick(MODE_DIE_FACES);
-  state.ruleDie = {face: state.mode};
+  const modeLocked = !!(state.ruleDie && state.ruleDie.locked);
+  if (!modeLocked) state.mode = pick(MODE_DIE_FACES);
+  state.ruleDie = {face: state.mode, locked: modeLocked};
 }
 
 function toggleLock(uid) {
   const d = state.pool.find(x => x.uid === uid);
   if (!d) return;
   d.locked = !d.locked;
+  render();
+}
+
+function toggleRuleLock() {
+  if (!state.ruleDie) return;
+  state.ruleDie.locked = !state.ruleDie.locked;
   render();
 }
 
@@ -1548,21 +1555,33 @@ function renderPool() {
         e.stopPropagation();
         openDieReference('Rule Die', MODE_DIE_FACES, f => MODE_EMOJI[f] || '', f => MODE_INFO[f] && MODE_INFO[f].goal);
       });
+      const ruleLockBtn = document.createElement('button');
+      ruleLockBtn.className = 'secondary small';
+      ruleLockBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleRuleLock(); });
       ruleTools.appendChild(ruleInfoBtn);
+      ruleTools.appendChild(ruleLockBtn);
       wrapper.appendChild(ruleTools);
       grid.insertBefore(wrapper, grid.firstChild);
       attachHoldReroll(wrapper, null, rerollMode);
+      wrapper.addEventListener('dblclick', (e) => {
+        if (e.target.closest('button')) return;
+        toggleRuleLock();
+      });
       inst = WEBGL_OK
         ? createDieScene(slot, MODE_DIE_FACES, state.ruleDie.face, getGlyph, true)
         : create2DDieFace(slot, state.ruleDie.face, getGlyph, true);
       inst.wrapper = wrapper;
       inst.currentFace = state.ruleDie.face;
+      inst.lockBtn = ruleLockBtn;
       diceInstances.set('rule-die', inst);
     } else if (inst.currentFace !== state.ruleDie.face) {
       if (inst.is2D) update2DDieFace(inst, state.ruleDie.face, getGlyph, true);
       else retriggerDie(inst, MODE_DIE_FACES, state.ruleDie.face, getGlyph, true);
       inst.currentFace = state.ruleDie.face;
     }
+    inst.wrapper.classList.toggle('locked', !!state.ruleDie.locked);
+    inst.lockBtn.textContent = state.ruleDie.locked ? '🔓' : '🔒';
+    inst.lockBtn.title = state.ruleDie.locked ? 'Unlock the mode' : 'Lock the mode so Roll leaves it alone';
   }
 
   // Symbol dice: 3D instances are created once per uid and left alone until
