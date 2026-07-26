@@ -63,6 +63,8 @@
     display: inline;
   }
   header p { margin: 0 0 0 8px; font-size: 0.65em; font-weight: 700; color: #5c3d10; opacity: 0.85; display: inline; }
+  header .ref-link { margin: 0 0 0 10px; font-size: 0.65em; font-weight: 700; color: #5c3d10; opacity: 0.85; display: inline; text-decoration: underline; }
+  header .ref-link:hover { opacity: 1; }
 
   .wrap {
     max-width: 2000px;
@@ -388,6 +390,13 @@
   .ref-section .label { font-size: 0.7em; text-transform: uppercase; letter-spacing: 0.5px; color: var(--accent); font-weight: 800; }
   .ref-section .content { font-size: 0.98em; }
 
+  /* Whole-die reference list (right-click on any die) */
+  .die-ref-list { display: flex; flex-direction: column; gap: 12px; }
+  .die-ref-row { display: grid; grid-template-columns: 32px 1fr; gap: 3px 10px; align-items: start; }
+  .die-ref-row .glyph { font-size: 1.35em; line-height: 1.3; text-align: center; }
+  .die-ref-row .name { font-weight: 800; color: var(--brown-dark); grid-column: 2; }
+  .die-ref-row .meaning { font-size: 0.85em; line-height: 1.4; color: var(--ink-soft); grid-column: 2; }
+
   .badge { display: inline-block; background: var(--accent); color: #fff; border-radius: 999px; padding: 2px 10px; font-size: 0.68em; font-weight: 800; margin-left: 6px; }
 
   /* Below this width, the sidebar's fixed 500px basis plus the pool panel's
@@ -500,6 +509,7 @@
 <header>
   <h1>Bible Quest Dice</h1>
   <p>Test build — for playtesting the design, not the final product</p>
+  <a class="ref-link" href="dice-reference.html" target="_blank" rel="noopener">📖 Face &amp; Mode Reference</a>
 </header>
 
 <div class="wrap">
@@ -535,6 +545,15 @@
     <div class="ref-section" id="refVerses"></div>
     <div class="ref-section" id="refMeaning"></div>
     <div class="ref-section" id="refAsk"></div>
+  </div>
+</div>
+
+<!-- Whole-die reference modal (right-click any die) -->
+<div class="modal-overlay" id="dieRefModal">
+  <div class="modal-box">
+    <button class="close-x" data-close="dieRefModal">×</button>
+    <h2 id="dieRefTitle"></h2>
+    <div id="dieRefList" class="die-ref-list"></div>
   </div>
 </div>
 
@@ -588,15 +607,15 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 /* ============================= DATA ============================= */
 
 const CORE_DICE = [
-  {id:1, name:"Water", faces:["sea/deep","fountain","river","rain","vessel","gem"]},
+  {id:1, name:"Water", faces:["sea/deep","fountain","fruit","rain","vessel","gem"]},
   {id:2, name:"Fire & Light", faces:["sun","flame","star","lightning","rainbow","lamp"]},
   {id:3, name:"Bread & Grain", faces:["loaves","wheat","house","salt","seed","seeing"]},
   {id:4, name:"Wine & Blood", faces:["wine","blood","grapevine","honey","olive branch","oil"]},
   {id:5, name:"Tree & Growth", faces:["tree","garden","wind","angel","thorn","child"]},
   {id:6, name:"Stone & Law", faces:["heart","cornerstone","scales","key","door","elder"]},
   {id:7, name:"Creatures", faces:["lamb","dove","lion","serpent","fish","calf"]},
-  {id:8, name:"Mountain & Wilderness", faces:["mountain","wilderness","city","path","worker","crowd"]},
-  {id:9, name:"Garment & Vessel", faces:["robe","mirror","boat","servant","bride","crown"]},
+  {id:8, name:"Mountain & Wilderness", faces:["mountain","wilderness","kingdom","path","worker","crowd"]},
+  {id:9, name:"Garment & Vessel", faces:["robe","wolf","boat","servant","bride","crown"]},
   {id:10, name:"Signs & Reversals", faces:["man","death","chain","shield","wonder","sword"]},
   {id:11, name:"Voice & Word", faces:["trumpet","scroll","song","silence","listen","oath/blessing"]},
   {id:12, name:"Season & Rhythm", faces:["rest","winter","night","reward","gold","tempter"]}
@@ -623,15 +642,15 @@ const MODE_EMOJI = {
 };
 
 const EMOJI_MAP = {
-  "sea/deep":"🌊", "fountain":"⛲", "river":"🏞️", "rain":"🌧️", "vessel":"🫙", "gem":"💎",
+  "sea/deep":"🌊", "fountain":"⛲", "fruit":"🍎", "rain":"🌧️", "vessel":"🫙", "gem":"💎",
   "sun":"☀️", "flame":"🔥", "star":"⭐", "lightning":"⚡", "rainbow":"🌈", "lamp":"🪔",
   "loaves":"🍞", "wheat":"🌾", "house":"🏠", "salt":"🧂", "seed":"🌱", "seeing":"👁️",
   "wine":"🍷", "blood":"🩸", "grapevine":"🍇", "honey":"🍯", "olive branch":"🫒", "oil":"🫗",
   "tree":"🌳", "garden":"🌿", "wind":"💨", "angel":"😇", "thorn":"🌵", "child":"🧒",
   "heart":"💖", "cornerstone":"🧱", "scales":"⚖️", "key":"🔑", "door":"🚪", "elder":"🧓",
   "lamb":"🐑", "dove":"🕊️", "lion":"🦁", "serpent":"🐍", "fish":"🐟", "calf":"🐄",
-  "mountain":"⛰️", "wilderness":"🏜️", "city":"🏛️", "path":"🛤️", "worker":"🧑‍🌾", "crowd":"👥",
-  "robe":"👘", "mirror":"🪞", "boat":"⛵", "servant":"🙇", "bride":"👰", "crown":"👑",
+  "mountain":"⛰️", "wilderness":"🏜️", "kingdom":"🏰", "path":"🛤️", "worker":"🧑‍🌾", "crowd":"👥",
+  "robe":"👘", "wolf":"🐺", "boat":"⛵", "servant":"🙇", "bride":"👰", "crown":"👑",
   "man":"🧔🏽‍♂️", "death":"☠️", "chain":"⛓️", "shield":"🛡️", "wonder":"☄️", "sword":"⚔️",
   "trumpet":"📯", "scroll":"📜", "song":"🎶", "silence":"🤫", "listen":"👂", "oath/blessing":"🙏",
   "rest":"🛌", "winter":"❄️", "night":"🌘", "reward":"🎁", "gold":"🪙", "tempter":"😈"
@@ -640,7 +659,7 @@ const EMOJI_MAP = {
 const FACE_REF = {
   "sea/deep": {die:"Water", meaning:"Truth in its most general, unformed state; chaos before order."},
   "fountain": {die:"Water", meaning:"The source truth is drawn from."},
-  "river": {die:"Water", meaning:"Doctrine flowing outward; abundance."},
+  "fruit": {die:"Water", meaning:"Love, joy, peace, patience — what grows on its own once the root is right, never before."},
   "rain": {die:"Water", meaning:"The Word in its plain, literal sense; provision."},
   "vessel": {die:"Water", meaning:"What you personally take in, or must drink."},
   "gem": {die:"Water", meaning:"The pearl of great price; a truth worth selling everything else to have."},
@@ -689,13 +708,13 @@ const FACE_REF = {
 
   "mountain": {die:"Mountain & Wilderness", meaning:"Nearness to the Lord; a place of encounter."},
   "wilderness": {die:"Mountain & Wilderness", meaning:"Testing; the dry, formative stretch."},
-  "city": {die:"Mountain & Wilderness", meaning:"Where judgment and welcome happen."},
+  "kingdom": {die:"Mountain & Wilderness", meaning:"What's sought first, before anything else is added; a reign not run the way the world runs one."},
   "path": {die:"Mountain & Wilderness", meaning:"\"The way\" — toward good, or away from it."},
   "worker": {die:"Mountain & Wilderness", meaning:"Effort spent in formation; labor undertaken in the wilderness stretch, not yet in sight of harvest."},
   "crowd": {die:"Mountain & Wilderness", meaning:"The multitude that gathers around what's happening — easily moved, easily scattered, sheep without a shepherd."},
 
   "robe": {die:"Garment & Vessel", meaning:"Truth clothing good; the outer sign of inner change."},
-  "mirror": {die:"Garment & Vessel", meaning:"Self-examination; truth reflected back so a person can see what they actually are, not what they assume."},
+  "wolf": {die:"Garment & Vessel", meaning:"A wolf in sheep's clothing; what a costume can hide, or fail to hide, from someone paying attention."},
   "boat": {die:"Garment & Vessel", meaning:"What carries someone through; the church, or the calling, that keeps them afloat."},
   "servant": {die:"Garment & Vessel", meaning:"Truth held in willing obedience."},
   "bride": {die:"Garment & Vessel", meaning:"The church joined to the Lord; covenant love."},
@@ -1439,6 +1458,18 @@ function openReference(face) {
   document.getElementById('refModal').classList.add('open');
 }
 
+// Right-click any die to see all six of its faces at once, not just the one
+// currently rolled — a quick lookup without leaving the table.
+function openDieReference(title, faceNames, getGlyph, getMeaning) {
+  document.getElementById('dieRefTitle').textContent = title;
+  document.getElementById('dieRefList').innerHTML = faceNames.map(f =>
+    '<div class="die-ref-row"><span class="glyph">' + getGlyph(f) + '</span>' +
+    '<span class="name">' + f + '</span>' +
+    '<span class="meaning">' + (getMeaning(f) || '') + '</span></div>'
+  ).join('');
+  document.getElementById('dieRefModal').classList.add('open');
+}
+
 /* ============================= RENDER ============================= */
 
 function render() {
@@ -1518,6 +1549,10 @@ function renderPool() {
       wrapper.appendChild(cat);
       grid.insertBefore(wrapper, grid.firstChild);
       attachHoldReroll(wrapper, null, rerollMode);
+      wrapper.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        openDieReference('Rule Die', MODE_DIE_FACES, f => MODE_EMOJI[f] || '', f => MODE_INFO[f] && MODE_INFO[f].goal);
+      });
       inst = WEBGL_OK
         ? createDieScene(slot, MODE_DIE_FACES, state.ruleDie.face, getGlyph, true)
         : create2DDieFace(slot, state.ruleDie.face, getGlyph, true);
@@ -1568,6 +1603,10 @@ function renderPool() {
       tools.appendChild(asideBtn);
       wrapper.appendChild(tools);
       attachHoldReroll(wrapper, () => toggleSelect(d.uid), () => rerollFace(d.uid));
+      wrapper.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        openDieReference(d.dieName, d.faces, f => EMOJI_MAP[f] || '', f => FACE_REF[f] && FACE_REF[f].meaning);
+      });
       grid.appendChild(wrapper);
       const getGlyph = f => EMOJI_MAP[f] || '';
       inst = WEBGL_OK
