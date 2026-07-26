@@ -590,24 +590,24 @@ import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.j
 const CORE_DICE = [
   {id:1, name:"Water", faces:["sea/deep","well","river","rain","vessel","flood/baptism"]},
   {id:2, name:"Fire & Light", faces:["sun","flame","star","lightning","rainbow","lamp"]},
-  {id:3, name:"Bread & Grain", faces:["loaves","wheat","house","salt","seed","worker"]},
+  {id:3, name:"Bread & Grain", faces:["loaves","wheat","house","salt","seed","seeing"]},
   {id:4, name:"Wine & Blood", faces:["wine","blood","grapevine","honey","olive branch","oil"]},
-  {id:5, name:"Tree & Growth", faces:["tree","garden","lily","palm branch","bramble","child"]},
+  {id:5, name:"Tree & Growth", faces:["tree","garden","wind","palm branch","bramble","child"]},
   {id:6, name:"Stone & Law", faces:["tablets of the law","cornerstone","scales","key","door","elder"]},
   {id:7, name:"Creatures", faces:["lamb","dove","lion","serpent","fish","ox"]},
-  {id:8, name:"Mountain & Wilderness", faces:["mountain","wilderness","city gate","path","shepherd","stranger"]},
+  {id:8, name:"Mountain & Wilderness", faces:["mountain","wilderness","city gate","path","worker","stranger"]},
   {id:9, name:"Garment & Vessel", faces:["robe","mirror","boat","servant","bride","crown"]},
   {id:10, name:"Signs & Reversals", faces:["man","tomb","chain","shield","scroll","sword"]},
   {id:11, name:"Voice & Word", faces:["trumpet","shout","song","silence","whisper","oath/blessing"]},
-  {id:12, name:"Season & Rhythm", faces:["rest","dawn","night","gift","coin","temptation"]}
+  {id:12, name:"Season & Rhythm", faces:["rest","winter","night","gift","coin","temptation"]}
 ];
-const MODE_DIE_FACES = ["Verse Finder","FOCUS","Story Builder","REFLECT","QUESTION","RIDDLE"];
+const MODE_DIE_FACES = ["Verse Finder","FOCUS","Story Builder","EXILE","QUESTION","RIDDLE"];
 
 const MODE_STYLE = {
   "Verse Finder":  {color:"#3d7a4f", glyph:"⁘"},
   "FOCUS":         {color:"#2f6690", glyph:"◎"},
   "Story Builder": {color:"#9c3b3b", glyph:"⌇"},
-  "REFLECT":       {color:"#6b4a8a", glyph:"⇋"},
+  "EXILE":         {color:"#6b4a8a", glyph:"🏝️"},
   "QUESTION":      {color:"#c9701f", glyph:"?"},
   "RIDDLE":        {color:"#1f8a8a", glyph:"⁇"}
 };
@@ -617,7 +617,7 @@ const MODE_EMOJI = {
   "Verse Finder": "🕵️",
   "FOCUS": "🧐",
   "Story Builder": "👤",
-  "REFLECT": "🪞",
+  "EXILE": "🏝️",
   "QUESTION": "❓",
   "RIDDLE": "🤔"
 };
@@ -625,16 +625,16 @@ const MODE_EMOJI = {
 const EMOJI_MAP = {
   "sea/deep":"🌊", "well":"🪣", "river":"🏞️", "rain":"🌧️", "vessel":"🫙", "flood/baptism":"🚿",
   "sun":"☀️", "flame":"🔥", "star":"⭐", "lightning":"⚡", "rainbow":"🌈", "lamp":"🪔",
-  "loaves":"🍞", "wheat":"🌾", "house":"🏠", "salt":"🧂", "seed":"🌱", "worker":"🚶",
+  "loaves":"🍞", "wheat":"🌾", "house":"🏠", "salt":"🧂", "seed":"🌱", "seeing":"👁️",
   "wine":"🍷", "blood":"🩸", "grapevine":"🍇", "honey":"🍯", "olive branch":"🫒", "oil":"🫗",
-  "tree":"🌳", "garden":"🌿", "lily":"🌸", "palm branch":"🌴", "bramble":"🌵", "child":"🧒",
+  "tree":"🌳", "garden":"🌿", "wind":"🌬️", "palm branch":"🌴", "bramble":"🌵", "child":"🧒",
   "tablets of the law":"🪨", "cornerstone":"🧱", "scales":"⚖️", "key":"🔑", "door":"🚪", "elder":"🧓",
   "lamb":"🐑", "dove":"🕊️", "lion":"🦁", "serpent":"🐍", "fish":"🐟", "ox":"🐂",
-  "mountain":"⛰️", "wilderness":"🏜️", "city gate":"🏛️", "path":"🛤️", "shepherd":"🧑‍🌾", "stranger":"👤",
+  "mountain":"⛰️", "wilderness":"🏜️", "city gate":"🏛️", "path":"🛤️", "worker":"🧑‍🌾", "stranger":"👤",
   "robe":"👘", "mirror":"🪞", "boat":"⛵", "servant":"🙇", "bride":"👰", "crown":"👑",
   "man":"🧔🏽‍♂️", "tomb":"🪦", "chain":"⛓️", "shield":"🛡️", "scroll":"📜", "sword":"⚔️",
   "trumpet":"📯", "shout":"📢", "song":"🎶", "silence":"🤫", "whisper":"🌬️", "oath/blessing":"🙏",
-  "rest":"🛌", "dawn":"🌅", "night":"🌑", "gift":"🎁", "coin":"🪙", "temptation":"😈"
+  "rest":"🛌", "winter":"❄️", "night":"🌑", "gift":"🎁", "coin":"🪙", "temptation":"😈"
 };
 
 const FACE_REF = {
@@ -657,7 +657,7 @@ const FACE_REF = {
   "house": {die:"Bread & Grain", meaning:"Provision kept and shared; the household a harvest is meant to sustain."},
   "salt": {die:"Bread & Grain", meaning:"What binds truth to good; preservation, covenant."},
   "seed": {die:"Bread & Grain", meaning:"Truth sown, waiting on the condition it lands in."},
-  "worker": {die:"Bread & Grain", meaning:"The one sent to labor; effort asked for even where the harvest is a gift."},
+  "seeing": {die:"Bread & Grain", meaning:"Discernment; perceiving the truth a plain provision actually carries."},
 
   "wine": {die:"Wine & Blood", meaning:"Truth flowing from good; joy; the new covenant."},
   "blood": {die:"Wine & Blood", meaning:"Life poured out; atonement; the cost that seals a covenant."},
@@ -668,7 +668,7 @@ const FACE_REF = {
 
   "tree": {die:"Tree & Growth", meaning:"The whole person; what a life produces."},
   "garden": {die:"Tree & Growth", meaning:"Innocence; a cultivated inner state."},
-  "lily": {die:"Tree & Growth", meaning:"Trust that doesn't strive."},
+  "wind": {die:"Tree & Growth", meaning:"The Spirit's unseen work; growth that comes from a source you can't control or take credit for."},
   "palm branch": {die:"Tree & Growth", meaning:"Victory publicly acknowledged."},
   "bramble": {die:"Tree & Growth", meaning:"Worldly care that chokes growth."},
   "child": {die:"Tree & Growth", meaning:"The posture required to receive; what growth looks like before it's proven."},
@@ -691,7 +691,7 @@ const FACE_REF = {
   "wilderness": {die:"Mountain & Wilderness", meaning:"Testing; the dry, formative stretch."},
   "city gate": {die:"Mountain & Wilderness", meaning:"Where judgment and welcome happen."},
   "path": {die:"Mountain & Wilderness", meaning:"\"The way\" — toward good, or away from it."},
-  "shepherd": {die:"Mountain & Wilderness", meaning:"Watchful care; one who leads toward good."},
+  "worker": {die:"Mountain & Wilderness", meaning:"Effort spent in formation; labor undertaken in the wilderness stretch, not yet in sight of harvest."},
   "stranger": {die:"Mountain & Wilderness", meaning:"The one without standing, owed welcome anyway."},
 
   "robe": {die:"Garment & Vessel", meaning:"Truth clothing good; the outer sign of inner change."},
@@ -716,7 +716,7 @@ const FACE_REF = {
   "oath/blessing": {die:"Voice & Word", meaning:"A promise spoken and binding; truth that obligates the speaker."},
 
   "rest": {die:"Season & Rhythm", meaning:"Ceasing; trust enacted simply by stopping."},
-  "dawn": {die:"Season & Rhythm", meaning:"Mercy new every morning; a fresh start that wasn't earned."},
+  "winter": {die:"Season & Rhythm", meaning:"Fallow endurance; faith holding on through the season nothing visibly grows."},
   "night": {die:"Season & Rhythm", meaning:"The dark stretch before the answer comes; the unknown that must be walked through."},
   "gift": {die:"Season & Rhythm", meaning:"Grace; something given that couldn't be taken or bought."},
   "coin": {die:"Season & Rhythm", meaning:"Worth entrusted; what's given to someone to put to use, not bury."},
@@ -738,12 +738,11 @@ const MODE_INFO = {
     "Roll & invent a scene",
     "Solo, or relay one die per beat",
     "Land it — kept or given up"]},
-  "REFLECT": {goal:"What scripture says we should be working on.", steps:[
-    "Claim a face",
-    "What's being worked on",
-    "Why it matters",
-    "How scripture counsels",
-    "(optional) Where you are in it"]},
+  "EXILE": {goal:"Cull the pool down to what belongs, and defend the bond.", steps:[
+    "Roll a full pool",
+    "Judge exiles the dice that don't belong",
+    "Everyone discusses the bond among survivors",
+    "Judge gives their reasoning"]},
   "QUESTION": {goal:"Open discussion without needing the answer.", steps:[
     "Claim the dice behind it",
     "Ask one question",
@@ -780,10 +779,10 @@ const MODE_IMAGE = {
     credit: "Gustave Doré, 1866 — “Moses Comes Down from Mount Sinai”",
     url: doreUrl("039.Moses Comes Down from Mount Sinai.jpg")
   },
-  "REFLECT": {
-    ref: "Luke 15:17-18",
-    credit: "Gustave Doré — “The Prodigal Son Decides to Return to His Father”",
-    url: doreUrl("Gustave Dore - The prodigal son decides to return to his father.jpg")
+  "EXILE": {
+    ref: "Judges 7:5-7",
+    credit: "Gustave Doré, 1866 — “Gideon Chooses 300 Soldiers”",
+    url: doreUrl("054.Gideon Chooses 300 Soldiers.jpg")
   },
   "QUESTION": {
     ref: "Mark 10:13-14; Matthew 18:3-4",
@@ -900,7 +899,7 @@ function drawModeIcon(ctx, mode, cx, cy, r) {
     ctx.moveTo(cx + p.botW * 0.75, p.shoulderY - p.headR * 0.2);
     ctx.lineTo(cx + p.botW * 0.9, p.botY + r * 0.1);
     ctx.stroke();
-  } else if (mode === 'REFLECT') {
+  } else if (mode === 'EXILE') {
     // A figure examining itself, mirrored fainter below a still waterline.
     const lineY = cy + r * 0.15;
     ctx.globalAlpha = 0.55;
@@ -1353,7 +1352,7 @@ function rerollMode() {
 function toggleSelect(uid) {
   const d = state.pool.find(x => x.uid === uid);
   if (!d) return;
-  const singleModes = ["FOCUS","REFLECT"];
+  const singleModes = ["FOCUS"];
   if (singleModes.includes(state.mode)) {
     const wasSelected = d.sel;
     state.pool.forEach(x => x.sel = false);

@@ -226,7 +226,7 @@ const DICE = [
     { glyph: "🏠", name: "house", meaning: "Provision kept and shared; the household a harvest is meant to sustain." },
     { glyph: "🧂", name: "salt", meaning: "What binds truth to good; preservation, covenant." },
     { glyph: "🌱", name: "seed", meaning: "Truth sown, waiting on the condition it lands in." },
-    { glyph: "🚶", name: "worker", meaning: "The one sent to labor; effort asked for even where the harvest is a gift." }
+    { glyph: "👁️", name: "seeing", meaning: "Discernment; perceiving the truth a plain provision actually carries." }
   ]},
   { name: "Wine & Blood", faces: [
     { glyph: "🍷", name: "wine", meaning: "Truth flowing from good; joy; the new covenant." },
@@ -239,7 +239,7 @@ const DICE = [
   { name: "Tree & Growth", faces: [
     { glyph: "🌳", name: "tree", meaning: "The whole person; what a life produces." },
     { glyph: "🌿", name: "garden", meaning: "Innocence; a cultivated inner state." },
-    { glyph: "🌸", name: "lily", meaning: "Trust that doesn't strive." },
+    { glyph: "🌬️", name: "wind", meaning: "The Spirit's unseen work; growth that comes from a source you can't control or take credit for." },
     { glyph: "🌴", name: "palm branch", meaning: "Victory publicly acknowledged." },
     { glyph: "🌵", name: "bramble", meaning: "Worldly care that chokes growth." },
     { glyph: "🧒", name: "child", meaning: "The posture required to receive; what growth looks like before it's proven." }
@@ -265,7 +265,7 @@ const DICE = [
     { glyph: "🏜️", name: "wilderness", meaning: "Testing; the dry, formative stretch." },
     { glyph: "🏛️", name: "city gate", meaning: "Where judgment and welcome happen." },
     { glyph: "🛤️", name: "path", meaning: "\"The way\" — toward good, or away from it." },
-    { glyph: "🧑‍🌾", name: "shepherd", meaning: "Watchful care; one who leads toward good." },
+    { glyph: "🧑‍🌾", name: "worker", meaning: "Effort spent in formation; labor undertaken in the wilderness stretch, not yet in sight of harvest." },
     { glyph: "👤", name: "stranger", meaning: "The one without standing, owed welcome anyway." }
   ]},
   { name: "Garment & Vessel", faces: [
@@ -294,7 +294,7 @@ const DICE = [
   ]},
   { name: "Season & Rhythm", faces: [
     { glyph: "🛌", name: "rest", meaning: "Ceasing; trust enacted simply by stopping." },
-    { glyph: "🌅", name: "dawn", meaning: "Mercy new every morning; a fresh start that wasn't earned." },
+    { glyph: "❄️", name: "winter", meaning: "Fallow endurance; faith holding on through the season nothing visibly grows." },
     { glyph: "🌑", name: "night", meaning: "The dark stretch before the answer comes; the unknown that must be walked through." },
     { glyph: "🎁", name: "gift", meaning: "Grace; something given that couldn't be taken or bought." },
     { glyph: "🪙", name: "coin", meaning: "Worth entrusted; what's given to someone to put to use, not bury." },
@@ -303,12 +303,12 @@ const DICE = [
 ];
 
 const RULE_DIE = { name: "Rule Die (always rolled)", faces: [
-  { glyph: "⁘", name: "GLEAN", meaning: "Gather what's usable; leave the rest standing." },
-  { glyph: "◎", name: "FOCUS", meaning: "Depth over breadth, and an opening to learn." },
-  { glyph: "⌇", name: "LAW", meaning: "Build a story that fulfils a command of God." },
-  { glyph: "⇋", name: "REFLECT", meaning: "What scripture says we should be working on." },
-  { glyph: "?", name: "QUESTION", meaning: "Open discussion without needing the answer." },
-  { glyph: "⁇", name: "RIDDLE", meaning: "One clue, one guess, everyone at once." }
+  { glyph: "🕵️", name: "Verse Finder", meaning: "Gather what's usable; leave the rest standing." },
+  { glyph: "🧐", name: "FOCUS", meaning: "Depth over breadth, and an opening to learn." },
+  { glyph: "👤", name: "Story Builder", meaning: "Build a story that fulfils a command of God." },
+  { glyph: "🏝️", name: "EXILE", meaning: "Cull the pool down to what belongs, and defend the bond." },
+  { glyph: "❓", name: "QUESTION", meaning: "Open discussion without needing the answer." },
+  { glyph: "🤔", name: "RIDDLE", meaning: "One clue, one guess, everyone at once." }
 ]};
 
 function renderCard(die, index, isRule) {
